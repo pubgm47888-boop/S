@@ -1,7 +1,3 @@
-{"name": "secure-ai-audio-workspace","private": true,"version": "1.0.0","type": "module","scripts": {"build": "mkdir -p dist && cp index.html dist/index.html","dev": "echo 'No bundler compilation required. Direct HTML serving.'"}}eof
-
-<!-- STREAMING_CHUNK: Delivering the premium single-file index.html with dual-mode translation, smart SRT, local audio compactor, and secure cloud sync -->
-```html:AI Cloud Audio Workspace:index.html
 <!DOCTYPE html>
 <html lang="my">
 <head>
@@ -419,7 +415,7 @@
       // --- 🌐 DUAL-MODE MULTI-LANGUAGE AI TRANSLATION ENGINE (GEMINI) ---
       const runTranslation = async (type) => {
         if (!userGeminiKey) {
-          showToast("သင်၏ ကိုယ်ပိုင် Gemini API Key အား Settings တွင် ထည့်သွင်းပေးပါ!", "error");
+          showToast("VIP အဆင့်အတွက် Gemini Key ကို ထည့်သွင်းပေးပါ!", "error");
           return;
         }
 
@@ -486,7 +482,7 @@
 
           audioObj.oncanplaythrough = () => {
             audioObj.play().catch(err => {
-              setTtsErrorMsg("Browser Policy Block: အသံဖိုင်ကို တိုက်ရိုက် auto-play ခွင့်မပြုပါ။ Play ခလုတ်ကို ကိုယ်တိုင်နှိပ်ပေးရန် လိုအပ်ပါသည်။");
+              setTtsErrorMsg("Browser Policy Block: အသံဖိုင်ကို တိုက်ရိုက် auto-play ခွင့်မပြုပါ။ Play ခလုတ်ကို ကိုယ်တိုက်နှိပ်ပေးရန် လိုအပ်ပါသည်။");
               setIsSynthesizing(false);
             });
           };
@@ -511,7 +507,7 @@
       const handlePaymentSubmit = async (e) => {
         e.preventDefault();
         if (!firebaseUser) {
-          showToast("ခေတ္တစောင့်ဆိုင်းပါ။ Cloud Database သို့ ချိတ်ဆက်နေဆဲဖြစ်ပါသည်။", "error");
+          showToast("ခေတ္တစောင့်ဆိုင်းပါ။ Cloud Database သို့ ချဆက်နေဆဲဖြစ်ပါသည်။", "error");
           return;
         }
 
@@ -546,39 +542,6 @@
           showToast("Admin Panel ဝင်ရောက်မှု အောင်မြင်ပါသည်။", "success");
         } else {
           showToast("❌ လျှို့ဝှက်ကုဒ်စကားဝှက် မမှန်ကန်ပါ။", "error");
-        }
-      };
-
-      // --- Admin Actions ---
-      const handleApproveRequest = async (paymentDoc) => {
-        try {
-          await db.doc(`artifacts/${safeAppId}/public/data/payments/${paymentDoc.id}`).update({
-            status: 'Approved'
-          });
-
-          const expiryDate = new Date();
-          expiryDate.setDate(expiryDate.getDate() + 30);
-          
-          await db.doc(`artifacts/${safeAppId}/users/${paymentDoc.userUid}/profile/status`).set({
-            role: 'premium',
-            expiresAt: expiryDate.toISOString()
-          });
-
-          showToast("အသုံးပြုသူအား ပရီမီယံ ရက်ပေါင်း ၃၀ အောင်မြင်စွာ သတ်မှတ်ပေးပြီးပါပြီ။", "success");
-        } catch (error) {
-          console.error("Approval Error:", error);
-          showToast("စနစ်ချိတ်ဆက်မှု မအောင်မြင်ပါ။", "error");
-        }
-      };
-
-      const handleRejectRequest = async (id) => {
-        try {
-          await db.doc(`artifacts/${safeAppId}/public/data/payments/${id}`).update({
-            status: 'Rejected'
-          });
-          showToast("လုပ်ဆောင်ချက်ကို ငြင်းပယ်လိုက်ပါသည်။", "warning");
-        } catch (error) {
-          showToast("လုပ်ဆောင်ချက် မအောင်မြင်ပါ။", "error");
         }
       };
 
@@ -652,7 +615,7 @@
                 ))}
               </div>
 
-              {/* GROQ KEYS LIST CARD */}
+              {/* GROQ KEYS CARD */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
                 <h3 className="text-xs font-bold text-slate-400 uppercase">Groq Keys Load Balancer</h3>
                 <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
@@ -673,7 +636,7 @@
               {isAdminAuthenticated && (
                 <div className="bg-indigo-950/20 border-2 border-indigo-500/50 rounded-2xl p-5 space-y-4">
                   <div className="flex justify-between items-center border-b border-indigo-900/40 pb-3">
-                    <h3 className="text-sm font-bold text-indigo-400 uppercase">⚙️ Admin Control Board (ဒေတာဘေ့စ် စီမံခန့်ခွဲမှု)</h3>
+                    <h3 className="text-sm font-bold text-indigo-400 uppercase">⚙️ Admin Control Board</h3>
                     <button onClick={() => { setKeyStatus(Array(10).fill('Active 🟢')); setActiveKeyIndex(0); showToast("API keys အားလုံးကို အသက်သွင်းပြီးပါပြီ။", "success"); }} className="bg-indigo-800 text-[10px] px-2.5 py-1 rounded font-bold hover:bg-indigo-700">Reset Keys 🔄</button>
                   </div>
                   <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
@@ -707,7 +670,6 @@
               {/* DYNAMIC WORKSPACE */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
                 
-                {/* 📝 TRANSCRIPT HUB */}
                 {activeTab === 'transcript' && (
                   <div className="space-y-4">
                     <h3 className="text-base font-bold text-white">📝 Transcript အပိုင်း (Groq Whisper-3 with Smart Compression)</h3>
@@ -728,7 +690,6 @@
                   </div>
                 )}
 
-                {/* 🎬 SRT SUBTITLE HUB (FIXED BURMESE ALGORITHM) */}
                 {activeTab === 'srt' && (
                   <div className="space-y-4">
                     <h3 className="text-base font-bold text-white">🎬 SRT Subtitle အပိုင်း (မြန်မာစာလုံးရေအလိုက် ပိုင်းဖြတ်စနစ်သစ်)</h3>
@@ -755,7 +716,6 @@
                   </div>
                 )}
 
-                {/* 🌐 MULTI-LANGUAGE DUAL TRANS-ENGINE (10 LANGUAGES ADDED) */}
                 {activeTab === 'translation' && (
                   <div className="space-y-6">
                     <div className="border-b border-slate-850 pb-3">
@@ -891,7 +851,7 @@
                       <input type="file" accept="image/*" className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-indigo-400 hover:file:bg-slate-700" />
                     </div>
                     <div className="pt-2 flex space-x-3">
-                      <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 bg-slate-800 text-slate-200 font-bold py-2.5 rounded-xl text-xs">ဖျက်သိမ်းမည်</button>
+                      <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition-colors">ဖျက်သိမ်းမည်</button>
                       <button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold py-2.5 rounded-xl text-xs shadow-lg transition-all hover:scale-105">အတည်ပြုချက် တင်ပြမည် 🚀</button>
                     </div>
                   </form>
