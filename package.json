@@ -1,0 +1,1 @@
+{"name": "secure-ai-audio-workspace","private": true,"version": "1.0.0","type": "module","scripts": {"build": "mkdir -p dist && cp index.html dist/index.html","dev": "echo 'No bundler compilation required. Direct HTML serving.'"}}
