@@ -7,19 +7,19 @@
   <title>THET x DeepLearn AI Workspace (Cloud Database)</title>
   
   <!-- React and ReactDOM CDN -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
+  <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
   
   <!-- Babel CDN (For Browser Compilation) -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
   
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
 
   <!-- Firebase v11 Compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+  <script src="[https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js](https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js)"></script>
+  <script src="[https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js](https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js)"></script>
+  <script src="[https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js](https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js)"></script>
 
   <style>
     /* Premium Modern Dark Theme Scrollbar */
@@ -315,7 +315,7 @@
           formData.append('file', audioFileToSend);
           formData.append('model', 'whisper-large-v3-turbo');
 
-          const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+          const response = await fetch('[https://api.groq.com/openai/v1/audio/transcriptions](https://api.groq.com/openai/v1/audio/transcriptions)', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${MAIN_GROQ_KEY}` },
             body: formData
@@ -536,7 +536,6 @@
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              {/* FIXED: Removed direct Telegram link to prevent accidental redirects */}
               <button onClick={() => showToast("Telegram Channel မှတ်သားထားပါ: @Deeplearnxai", "info")} className="bg-sky-600/10 hover:bg-sky-600/20 text-sky-400 px-4 py-1.5 rounded-xl text-xs font-bold border border-sky-500/30">📢 Telegram Ch</button>
               {userRole !== 'premium' ? (
                 <button onClick={() => setShowPaymentModal(true)} className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 px-4 py-1.5 rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20">👑 Get Premium</button>
@@ -765,12 +764,12 @@
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
                       <p className="text-xs font-bold text-sky-400 mb-2">KBZ Pay QR Code</p>
-                      <img src="https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg" alt="KBZPay QR Code" className="w-full max-h-48 object-contain rounded-lg hover:scale-105 transition-transform duration-200" />
+                      <img src="[https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg](https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg)" alt="KBZPay QR Code" className="w-full max-h-48 object-contain rounded-lg hover:scale-105 transition-transform duration-200" />
                       <p className="text-[10px] text-slate-400 mt-2 font-semibold">U Thet Phyo Tun</p>
                     </div>
                     <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
                       <p className="text-xs font-bold text-yellow-500 mb-2">Wave Pay QR Code</p>
-                      <img src="https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg" alt="WavePay QR Code" className="w-full max-h-48 object-contain rounded-lg hover:scale-105 transition-transform duration-200" />
+                      <img src="[https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg](https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg)" alt="WavePay QR Code" className="w-full max-h-48 object-contain rounded-lg hover:scale-105 transition-transform duration-200" />
                       <p className="text-[10px] text-slate-400 mt-2 font-semibold">U Thet Phyo Tun</p>
                     </div>
                   </div>
@@ -791,8 +790,7 @@
                   </form>
                 </div>
                 <div className="p-4 bg-slate-950 border-t border-slate-800 text-center">
-                   {/* FIXED: Removed direct Telegram link here too */}
-                  <button onClick={() => showToast("ပြဿနာတစ်စုံတစ်ရာရှိပါက @thetphyo_tun သို့ ဆက်သွယ်ပါ။", "info")} className="text-xs text-sky-400 hover:underline font-bold">ပြဿနာတစ်စုံတစ်ရာရှိပါက Telegram Account (@thetphyo_tun) သို့ ဆက်သွယ်ပါ။</button>
+                   <button onClick={() => showToast("ပြဿနာတစ်စုံတစ်ရာရှိပါက @thetphyo_tun သို့ ဆက်သွယ်ပါ။", "info")} className="text-xs text-sky-400 hover:underline font-bold">ပြဿနာတစ်စုံတစ်ရာရှိပါက Telegram Account (@thetphyo_tun) သို့ ဆက်သွယ်ပါ။</button>
                 </div>
               </div>
             </div>
