@@ -4,19 +4,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>THET x DeepLearn AI Workspace (Share Enabled)</title>
+  <title>THET x DeepLearn AI Workspace (Share & Cloud Connected)</title>
   
-  <!-- React and ReactDOM CDN -->
+  <!-- React 18 & ReactDOM 18 CDNs (Highly Reliable) -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   
-  <!-- Babel CDN (For Browser Compilation) -->
+  <!-- Babel Compiler for In-Browser JSX Parsing -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS Engine -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Modern Firebase v11 SDKs -->
+  <!-- Firebase v11 Compat SDKs (Consistent APIs) -->
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
@@ -41,15 +41,16 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
 
+  <!-- React Root Container -->
   <div id="root"></div>
 
-  <!-- React Application Core Logic with Cloud Integration -->
+  <!-- React Application Core Logic -->
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // --- Firebase Configurations & Environmental Safety ---
-    const firebaseConfig = {
-      apiKey: "", // Injected at runtime
+    // --- Firebase Initialization Engine ---
+    const defaultFirebaseConfig = {
+      apiKey: "", // Injected dynamically at runtime
       authDomain: "default-app-id.firebaseapp.com",
       projectId: "default-app-id",
       storageBucket: "default-app-id.appspot.com",
@@ -62,23 +63,30 @@
       safeAppId = __app_id;
     }
     
-    let db;
-    let auth;
+    let db = null;
+    let auth = null;
+    let firebaseReady = false;
+
     try {
       if (typeof __firebase_config !== 'undefined' && __firebase_config) {
         const customConfig = JSON.parse(__firebase_config);
         firebase.initializeApp(customConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+        firebaseReady = true;
       } else {
-        firebase.initializeApp(firebaseConfig);
+        // Fallback or preview initialize
+        firebase.initializeApp(defaultFirebaseConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+        firebaseReady = true;
       }
-      db = firebase.firestore();
-      auth = firebase.auth();
     } catch (e) {
-      console.warn("Firebase Fallback Alert:", e);
+      console.warn("Firebase was not initialized correctly. Continuing in Sandbox/Local mode.", e);
     }
 
     function App() {
-      // --- Decrypted Groq API Keys (Directly Hardcoded for Perfect Execution) ---
+      // --- Decrypted Groq API Keys ---
       const initialGroqKeys = [
         "gsk_MaUgafpHlKCG7rm4yrWGdybZ3YYajEy9h1UGDgp8slZBaiaHh",
         "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",
@@ -92,24 +100,27 @@
         "gsk_dIG05XBNQZvbwcpWGx9cGWdby3yhh0503VS66l1W4xsucpuWPP"
       ];
 
-      // --- Main States ---
+      // --- State Configurations ---
       const [firebaseUser, setFirebaseUser] = useState(null);
       const [userRole, setUserRole] = useState('user');
       const [premiumExpiresAt, setPremiumExpiresAt] = useState('');
+      const [isAuthLoading, setIsAuthLoading] = useState(true);
       const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
         return sessionStorage.getItem('is_admin_auth') === 'true';
       });
       const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
       const [adminPasswordInput, setAdminPasswordInput] = useState('');
       
-      // Keys Storage states
+      // API Key States
       const [userGeminiKey, setUserGeminiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
       const [userGroqKey, setUserGroqKey] = useState(() => localStorage.getItem('user_groq_api_key') || '');
       
+      // Payment Modal States
       const [showPaymentModal, setShowPaymentModal] = useState(false);
       const [submittedTxId, setSubmittedTxId] = useState('');
       const [selectedReceiptUrl, setSelectedReceiptUrl] = useState('');
       const ADMIN_SECRET_KEY = "thetphyo_admin_2026";
+      
       const [activeTab, setActiveTab] = useState('transcript');
       const [groqKeys] = useState(initialGroqKeys);
       const [activeKeyIndex, setActiveKeyIndex] = useState(0);
@@ -148,10 +159,14 @@
         }, 4000);
       };
 
-      // --- Firebase Auth & Security Guard ---
+      // --- Auth & Database Security Implementation (RULE 3) ---
       useEffect(() => {
+        if (!firebaseReady || !auth) {
+          setIsAuthLoading(false);
+          return;
+        }
+
         const initAuthAndConnect = async () => {
-          if (!auth) return;
           try {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
               await auth.signInWithCustomToken(__initial_auth_token);
@@ -160,6 +175,8 @@
             }
           } catch (e) {
             console.error("Authentication Process Error:", e);
+          } finally {
+            setIsAuthLoading(false);
           }
         };
 
@@ -170,6 +187,7 @@
             setFirebaseUser(user);
             showToast("Cloud Database နှင့် အောင်မြင်စွာ ချိတ်ဆက်ပြီးပါပြီ။", "success");
             
+            // Listen to User Status
             const userRef = db.doc(`artifacts/${safeAppId}/users/${user.uid}/profile/status`);
             userRef.onSnapshot((doc) => {
               if (doc.exists) {
@@ -180,7 +198,7 @@
                 userRef.set({ role: 'user', expiresAt: '' });
               }
             }, (error) => {
-              console.error("User Status Error:", error);
+              console.error("User Status DB Error:", error);
             });
           }
         });
@@ -188,7 +206,7 @@
         return () => unsubscribe();
       }, []);
 
-      // --- Share Link Auto Loader (On Page Load) ---
+      // --- Share Link Auto-detection System ---
       useEffect(() => {
         if (!firebaseUser || !db) return;
 
@@ -196,7 +214,7 @@
           const urlParams = new URLSearchParams(window.location.search);
           const shareId = urlParams.get('share');
           if (shareId) {
-            showToast("လင့်ခ်မှ အချက်အလက်များကို ဆွဲယူနေပါသည်...", "info");
+            showToast("မျှဝေထားသော Workspace ကို ဒေတာဘေ့စ်မှ ဆွဲယူနေပါသည်...", "info");
             try {
               // RULE 1: /artifacts/{appId}/public/data/{collectionName}
               const shareDocRef = db.doc(`artifacts/${safeAppId}/public/data/shares/${shareId}`);
@@ -209,13 +227,13 @@
                 if (data.translatedSrt) setTranslatedSrtText(data.translatedSrt);
                 
                 setSharedLoadedBanner(true);
-                showToast("မျှဝေထားသော Workspace အချက်အလက်များကို အောင်မြင်စွာ ဖွင့်လိုက်ပါပြီ။", "success");
+                showToast("မျှဝေထားသော Workspace အချက်အလက်များ အောင်မြင်စွာ ဖွင့်ပြီးပါပြီ။", "success");
               } else {
-                showToast("တောင်းဆိုသော မျှဝေလင့်ခ်ကို ရှာမတွေ့ပါ။ သက်တမ်းကုန်သွားခြင်း ဖြစ်နိုင်ပါသည်။", "error");
+                showToast("တောင်းဆိုသော မျှဝေလင့်ခ်ကို ရှာမတွေ့ပါ သို့မဟုတ် ပျက်စီးသွားပါပြီ။", "error");
               }
             } catch (err) {
               console.error("Share data load error:", err);
-              showToast("မျှဝေဒေတာ ဖတ်ရှုခြင်း မအောင်မြင်ပါရှင်။", "error");
+              showToast("မျှဝေဒေတာ ဖတ်ရှုခြင်း မအောင်မြင်ပါ ခင်ဗျာ။", "error");
             }
           }
         };
@@ -227,6 +245,7 @@
       useEffect(() => {
         if (!firebaseUser || !db) return;
 
+        // RULE 1 & 2: Simple query to retrieve payments
         const publicCollection = db.collection(`artifacts/${safeAppId}/public/data/payments`);
         const unsubscribePayments = publicCollection.onSnapshot((snapshot) => {
           const list = [];
@@ -235,13 +254,13 @@
           });
           setPaymentRequests(list);
         }, (error) => {
-          console.error("Cloud Payments Reading Failed:", error);
+          console.error("Payments DB Reading Failed:", error);
         });
 
         return () => unsubscribePayments();
       }, [firebaseUser]);
 
-      // --- Premium Expiration Engine ---
+      // --- Premium Expiration Watchdog ---
       useEffect(() => {
         const checkPremiumExpiry = async () => {
           if (userRole === 'premium' && premiumExpiresAt && firebaseUser && db) {
@@ -259,11 +278,11 @@
           }
         };
         checkPremiumExpiry();
-        const interval = setInterval(checkPremiumExpiry, 15000);
+        const interval = setInterval(checkPremiumExpiry, 20000);
         return () => clearInterval(interval);
       }, [userRole, premiumExpiresAt, firebaseUser]);
 
-      // LocalStorage Cache System
+      // LocalStorage Sync
       useEffect(() => {
         localStorage.setItem('stored_transcript', transcriptText);
         localStorage.setItem('stored_srt', srtText);
@@ -283,7 +302,7 @@
               const AudioContextClass = window.AudioContext || window.webkitAudioContext;
               const audioCtx = new AudioContextClass();
               
-              setLogs(prev => [...prev, "⚡ ဗီဒီယိုထဲမှ အသံလှိုင်းများကို ခွဲထုတ်နေပါသည် (Decoding Audio Track)..."]);
+              setLogs(prev => [...prev, "⚡ ဗီဒီယိုထဲမှ အသံလှိုင်းများကို စတင်ခွဲထုတ်နေပါသည် (Decoding Audio)..."]);
               const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
               
               setLogs(prev => [...prev, "⚡ အသံလှိုင်းများကို 16,000Hz Speech WAV အဖြစ်သို့ အရွယ်အစားချုံ့နေပါသည်..."]);
@@ -303,7 +322,7 @@
               reject(err);
             }
           };
-          reader.onerror = () => reject(new Error("ဗီဒီယိုဖတ်ရှုခြင်း မအောင်မြင်ပါ"));
+          reader.onerror = () => reject(new Error("ဗီဒီယိုဖိုင်ဖတ်ရှုခြင်း မအောင်မြင်ပါ"));
           reader.readAsArrayBuffer(videoFile);
         });
       };
@@ -530,14 +549,14 @@
         setIsProcessing(false);
       };
 
-      // --- Share Workspace Engine (NEW FEATURE!) ---
+      // --- Share Workspace Engine (RULE 1 & 3 Compliance) ---
       const generateShareLink = async () => {
         if (!firebaseUser || !db) {
-          showToast("စနစ်သည် Cloud database ချိတ်ဆက်မှု မရှိသေးပါရှင်။", "error");
+          showToast("စနစ်သည် Cloud database ချိတ်ဆက်မှု မရှိသေးပါ ခင်ဗျာ။", "error");
           return;
         }
         if (!transcriptText && !srtText && !translatedText && !translatedSrtText) {
-          showToast("မျှဝေရန် Workspace ထဲတွင် မည်သည့်စာသားမှ မရှိသေးပါရှင်။", "error");
+          showToast("မျှဝေရန် Workspace ထဲတွင် မည်သည့်စာသားမှ မရှိသေးပါ ခင်ဗျာ။", "error");
           return;
         }
 
@@ -545,7 +564,7 @@
         try {
           const shareId = Math.random().toString(36).substring(2, 12);
           
-          // RULE 1 - Strict Paths: /artifacts/{appId}/public/data/{collectionName}
+          // RULE 1: /artifacts/{appId}/public/data/{collectionName}
           const shareDocRef = db.collection(`artifacts/${safeAppId}/public/data/shares`).doc(shareId);
           await shareDocRef.set({
             transcript: transcriptText,
@@ -559,15 +578,15 @@
           const fullShareLink = `${currentUrl}?share=${shareId}`;
           setGeneratedShareUrl(fullShareLink);
           setShowShareModal(true);
-          showToast("မျှဝေရန်လင့်ခ် အောင်မြင်စွာ ထုတ်ပေးပြီးပါပြီ။", "success");
+          showToast("မျှဝေရန်လင့်ခ် အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ။", "success");
         } catch (err) {
           console.error("Generating share link failed:", err);
-          showToast("မျှဝေလင့်ခ် ဖန်တီး၍မရပါရှင်။", "error");
+          showToast("မျှဝေလင့်ခ် ဖန်တီး၍မရပါ ခင်ဗျာ။", "error");
         }
         setIsGeneratingShare(false);
       };
 
-      // Use hidden textarea for cross-origin clipboards
+      // Safe Clipboard System for Sandbox environments
       const copyToClipboard = (text) => {
         const tempTextarea = document.createElement("textarea");
         tempTextarea.value = text;
@@ -577,7 +596,7 @@
           document.execCommand("copy");
           showToast("လင့်ခ်ကို Clipboard ထဲသို့ ကူးယူပြီးပါပြီ။", "success");
         } catch (err) {
-          showToast("လင့်ခ်ကို ကူးယူ၍မရပါရှင်။ ကိုယ်တိုင် copy လုပ်ပေးပါ။", "error");
+          showToast("လင့်ခ်ကို ကူးယူ၍မရပါ။ ကိုယ်တိုင် Copy ယူပေးပါ။", "error");
         }
         document.body.removeChild(tempTextarea);
       };
@@ -609,7 +628,7 @@
 
           audioObj.oncanplaythrough = () => {
             audioObj.play().catch(err => {
-              setTtsErrorMsg("Browser Auto-play Policy Blocked: အသံဖိုင်ကို တိုက်ရိုက် auto-play ခွင့်မပြုပါ။ Play ခလုတ်ကို ကိုယ်တိုင်နှိပ်ပေးရန် လိုအပ်ပါသည်။");
+              setTtsErrorMsg("Browser Auto-play Policy Blocked: Play ခလုတ်ကို ကိုယ်တိုင်နှိပ်ပေးရန် လိုအပ်ပါသည်။");
               setIsSynthesizing(false);
             });
           };
@@ -751,7 +770,7 @@
             </div>
             <div className="text-slate-400 flex items-center space-x-2">
               <span>Cloud Status:</span>
-              <span className={`w-2 h-2 rounded-full ${firebaseUser ? 'bg-green-400' : 'bg-red-500'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${firebaseUser ? 'bg-green-400 animate-ping' : 'bg-red-500'}`}></span>
               <span className="font-bold text-amber-400">{userRole.toUpperCase()}</span>
             </div>
           </div>
@@ -780,7 +799,7 @@
               <button 
                 onClick={generateShareLink} 
                 disabled={isGeneratingShare} 
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/20 flex items-center gap-1"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/20 flex items-center gap-1 transition-all"
               >
                 {isGeneratingShare ? "Processing..." : "🔗 Share Workspace"}
               </button>
@@ -923,7 +942,7 @@
               {/* DYNAMIC SYSTEM TABS */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
                 
-                {/* 📝 TRANSCRIPT SECTION (WITH SPEECH AUTO COMPRESSION) */}
+                {/* 📝 TRANSCRIPT SECTION */}
                 {activeTab === 'transcript' && (
                   <div className="space-y-4">
                     <h3 className="text-base font-bold text-white">📝 Transcript အပိုင်း (Groq Whisper-3 with Auto Speech Compression)</h3>
@@ -1054,7 +1073,7 @@
 
           </main>
 
-          {/* DYNAMIC SHARE POPUP MODAL (NEW!) */}
+          {/* DYNAMIC SHARE POPUP MODAL */}
           {showShareModal && (
             <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4 z-50">
               <div className="bg-slate-900 border border-slate-800 max-w-md w-full rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4">
