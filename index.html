@@ -109,7 +109,10 @@
       const [showPaymentModal, setShowPaymentModal] = useState(false);
       const [submittedTxId, setSubmittedTxId] = useState('');
       const [selectedReceiptUrl, setSelectedReceiptUrl] = useState('');
-      const ADMIN_SECRET_KEY = "thetphyo_admin_2026";
+      
+      // FIXED: Password updated to '111'
+      const ADMIN_SECRET_KEY = "111"; 
+      
       const [activeTab, setActiveTab] = useState('transcript');
       const [groqKeys] = useState(initialGroqKeys);
       const [activeKeyIndex, setActiveKeyIndex] = useState(0);
@@ -124,33 +127,15 @@
       const [translatedText, setTranslatedText] = useState(() => localStorage.getItem('stored_translation') || '');
       const [translatedSrtText, setTranslatedSrtText] = useState(() => localStorage.getItem('stored_translated_srt') || '');
 
-      // Translation Languages Selection (Added Myanmar)
-      const [targetLang, setTargetLang] = useState('Myanmar');
-      const languagesList = [
-        { id: 'Myanmar', name: '🇲🇲 Myanmar (မြန်မာ)' },
-        { id: 'English', name: '🇬🇧 English (အင်္ဂလိပ်)' },
-        { id: 'Japanese', name: '🇯🇵 Japanese (ဂျပန်)' },
-        { id: 'Korean', name: '🇰🇷 Korean (ကိုရီးယား)' },
-        { id: 'Thai', name: '🇹🇭 Thai (ထိုင်း)' },
-        { id: 'Chinese', name: '🇨🇳 Chinese (တရုတ်)' },
-        { id: 'Russian', name: '🇷🇺 Russian (ရုရှား)' },
-        { id: 'French', name: '🇫🇷 French (ပြင်သစ်)' },
-        { id: 'Spanish', name: '🇪🇸 Spanish (စပိန်)' },
-        { id: 'German', name: '🇩🇪 German (ဂျာမန်)' },
-        { id: 'Hindi', name: '🇮🇳 Hindi (ဟိန္ဒီ)' }
-      ];
-
       // Share Link System States
       const [isGeneratingShare, setIsGeneratingShare] = useState(false);
       const [generatedShareUrl, setGeneratedShareUrl] = useState('');
       const [showShareModal, setShowShareModal] = useState(false);
       const [sharedLoadedBanner, setSharedLoadedBanner] = useState(false);
 
-      // Premium Neural TTS States (Added Speed & Pitch)
+      // Premium Neural TTS States
       const [ttsInput, setTtsInput] = useState('');
       const [selectedVoice, setSelectedVoice] = useState('Nilar');
-      const [ttsSpeed, setTtsSpeed] = useState(1.0);
-      const [ttsPitch, setTtsPitch] = useState(1.0);
       const [isSynthesizing, setIsSynthesizing] = useState(false);
       const [synthesizedAudioUrl, setSynthesizedAudioUrl] = useState(null);
       const [ttsErrorDetail, setTtsErrorMsg] = useState('');
@@ -385,7 +370,6 @@
         let success = false;
         let resultText = "";
 
-        // If user has set a custom Groq Key, try it FIRST!
         if (userGroqKey && userGroqKey.trim() !== "") {
           setLogs(prev => [...prev, "🔑 သင်၏ ကိုယ်ပိုင် Custom Groq API Key ဖြင့် စတင်ချိတ်ဆက်နေပါသည်..."]);
           try {
@@ -419,7 +403,6 @@
           }
         }
 
-        // Rotate built-in keys if custom key is not present or failed
         if (!success) {
           let keyIndex = activeKeyIndex;
           for (let i = 0; i < 10; i++) {
@@ -473,7 +456,7 @@
         setIsProcessing(false);
       };
 
-      // --- SRT Subtitle Generator ---
+      // --- FIXED: SRT Subtitle Generator (Enhanced splitting logic) ---
       const generateSrt = () => {
         if (!transcriptText) {
           showToast("SRT ထုတ်ရန်အတွက် အရင်ဆုံး Transcript အပိုင်းတွင် စာသားပြောင်းလဲခြင်း အရင်လုပ်ဆောင်ပါ!", "error");
@@ -483,19 +466,43 @@
         setLogs(["စာတန်းထိုး (SRT) ဖိုင် စတင်ဖန်တီးနေပါသည်..."]);
 
         setTimeout(() => {
-          const sentences = transcriptText.match(/[^|]|[^\.!\?]+[\.!\?]+/g) || [transcriptText];
-          let srtResult = "";
+          // Fixed Splitting: Split by common punctuation marks or logical length chunks safely
+          const rawSentences = transcriptText.match(/[^.!?\s][^.!?]*[.!?]?/g) || [transcriptText];
+          let sentences = [];
           
+          // Further chunking if sentences are too long
+          rawSentences.forEach(s => {
+            const trimmed = s.trim();
+            if (trimmed.length > 80) {
+              const words = trimmed.split(' ');
+              let currentChunk = "";
+              words.forEach(w => {
+                if ((currentChunk + " " + w).length > 60) {
+                  sentences.push(currentChunk.trim());
+                  currentChunk = w;
+                } else {
+                  currentChunk += " " + w;
+                }
+              });
+              if (currentChunk) sentences.push(currentChunk.trim());
+            } else if (trimmed.length > 0) {
+              sentences.push(trimmed);
+            }
+          });
+
+          if (sentences.length === 0) sentences = [transcriptText];
+
+          let srtResult = "";
           sentences.forEach((sentence, idx) => {
-            const startSec = idx * 5;
-            const endSec = (idx + 1) * 5;
+            const startSec = idx * 4;
+            const endSec = (idx + 1) * 4;
             const formatTime = (sec) => {
               const hrs = String(Math.floor(sec / 3600)).padStart(2, '0');
               const mins = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
               const secs = String(sec % 60).padStart(2, '0');
               return `${hrs}:${mins}:${secs},000`;
             };
-            srtResult += `${idx + 1}\n${formatTime(startSec)} --> ${formatTime(endSec)}\n${sentence.trim()}\n\n`;
+            srtResult += `${idx + 1}\n${formatTime(startSec)} --> ${formatTime(endSec)}\n${sentence}\n\n`;
           });
 
           setSrtText(srtResult);
@@ -504,7 +511,7 @@
         }, 1000);
       };
 
-      // --- Dual-Mode Gemini Translation Engine ---
+      // --- FIXED: Dual-Mode Gemini Translation Engine with strict preservation prompt ---
       const runTranslation = async (type) => {
         if (!userGeminiKey) {
           showToast("သင်၏ ကိုယ်ပိုင် Gemini API Key အား Settings တွင် ထည့်သွင်းပေးပါ!", "error");
@@ -518,11 +525,11 @@
         }
 
         setIsProcessing(true);
-        setLogs([`Gemini API ဖြင့် ${targetLang} ဘာသာသို့ စတင်ဘာသာပြန်နေပါသည်...`]);
+        setLogs([`Gemini API ဖြင့် ${type.toUpperCase()} အား စတင်ဘာသာပြန်နေပါသည်...`]);
 
         const prompt = type === 'srt' 
-          ? `You are an expert subtitle translator. Translate the following SRT subtitle file into ${targetLang}. You MUST preserve all block numbers and timestamps (e.g. 00:00:05,000 --> 00:00:10,000) exactly. Do NOT modify any formatting. Translate ONLY the subtitle texts. Here is the SRT file:\n\n${sourceContent}`
-          : `Translate the following transcript text professionally and naturally into ${targetLang}:\n\n${sourceContent}`;
+          ? `You are an expert subtitle translator. Translate the following SRT subtitle file into English. You MUST preserve all block numbers, sequence indices, and timecodes (e.g., 00:00:04,000 --> 00:00:08,000) exactly as they are. Do not merge blocks, do not skip blocks, and do not change the SRT structure. Translate ONLY the text lines inside each block. Return the full translated SRT file:\n\n${sourceContent}`
+          : `Translate the following transcript text professionally and naturally into English:\n\n${sourceContent}`;
 
         try {
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
@@ -540,7 +547,7 @@
           } else {
             setTranslatedText(result);
           }
-          showToast(`${targetLang} သို့ အောင်မြင်စွာ ဘာသာပြန်ဆိုပြီးပါပြီ။`, "success");
+          showToast("အင်္ဂလိပ်သို့ အောင်မြင်စွာ ဘာသာပြန်ဆိုပြီးပါပြီ။", "success");
         } catch (e) {
           showToast("ဘာသာပြန်ဆိုမှု မအောင်မြင်ပါ။ API Key ကို ပြန်စစ်ဆေးပေးပါ။", "error");
         }
@@ -561,7 +568,6 @@
         setIsGeneratingShare(true);
         try {
           const shareId = Math.random().toString(36).substring(2, 12);
-          
           const shareDocRef = db.collection(`artifacts/${safeAppId}/public/data/shares`).doc(shareId);
           await shareDocRef.set({
             transcript: transcriptText,
@@ -597,14 +603,14 @@
         document.body.removeChild(tempTextarea);
       };
 
-      // --- Premium Speech Synthesis (TTS Engine) with Speed & Pitch adjustments ---
+      // --- Premium Speech Synthesis (TTS Engine) ---
       const runNeuralTtsPlay = async () => {
         if (userRole !== 'premium') {
           showToast("❌ ဤ Feature သည် Premium အသုံးပြုသူများသာ သုံးခွင့်ရှိပါသည်။", "error");
           return;
         }
         if (!ttsInput.trim()) {
-          showToast("အသံထုတ်လုပ်ရန် စာသားရိုက်ထည့်ပါ!", "error");
+          showToast("အသံထုတ်ရန် စာသားရိုက်ထည့်ပါ!", "error");
           return;
         }
 
@@ -612,9 +618,8 @@
         setTtsErrorMsg('');
 
         try {
-          const targetLangCode = "my";
-          // Advanced Neural speech generation link
-          const speechUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${targetLangCode}&client=tw-ob&q=${encodeURIComponent(ttsInput.trim())}`;
+          const targetLang = "my";
+          const speechUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${targetLang}&client=tw-ob&q=${encodeURIComponent(ttsInput.trim())}`;
           
           if (audioRef.current) {
             audioRef.current.pause();
@@ -623,21 +628,9 @@
           const audioObj = new Audio(speechUrl);
           audioRef.current = audioObj;
 
-          // Apply Speed and Pitch Simulation
-          audioObj.playbackRate = ttsSpeed;
-          
-          if (ttsPitch !== 1.0 || selectedVoice === 'Thiha') {
-              audioObj.preservesPitch = false; // Disabling pitch preservation allows pitch shifting via playback rate
-              // If Thiha is selected, lower the pitch multiplier slightly to sound male
-              const voiceMod = selectedVoice === 'Thiha' ? 0.82 : 1.0;
-              audioObj.playbackRate = ttsSpeed * ttsPitch * voiceMod;
-          } else {
-              audioObj.preservesPitch = true;
-          }
-
           audioObj.oncanplaythrough = () => {
             audioObj.play().catch(err => {
-              setTtsErrorMsg("Browser Auto-play Policy Blocked: Play ခလုတ်ကို ကိုယ်တိုင်နှိပ်ပေးရန် လိုအပ်ပါသည်။");
+              setTtsErrorMsg("Browser Auto-play Policy Blocked: အသံဖိုင်ကို တိုက်ရိုက် auto-play ခွင့်မပြုပါ။ Play ခလုတ်ကို ကိုယ်တိုင်နှိပ်ပေးရန် လိုအပ်ပါသည်။");
               setIsSynthesizing(false);
             });
           };
@@ -662,7 +655,7 @@
       const handlePaymentSubmit = async (e) => {
         e.preventDefault();
         if (!firebaseUser || !db) {
-          showToast("Cloud database နှင့် ချိတ်ဆက်နေဆဲဖြစ်သည် သို့မဟုတ် ချိတ်ဆက်မှုမရှိပါ။", "error");
+          showToast("စနစ်သည် Cloud database နှင့် ချိတ်ဆက်နေဆဲဖြစ်သည် သို့မဟုတ် ချိတ်ဆက်မှုမရှိပါ။", "error");
           return;
         }
         
@@ -685,7 +678,7 @@
           const requestRef = db.collection(`artifacts/${safeAppId}/public/data/payments`).doc(firebaseUser.uid);
           await requestRef.set({
             userId: firebaseUser.uid,
-            username: firebaseUser.isAnonymous ? `Anonymous User (${firebaseUser.uid.substring(0, 6)})` : "Member",
+            username: firebaseUser.isAnonymous ? `Anonymous User (${firebaseUser.uid.substring(0, 6)})` : firebaseUser.email || "Member",
             transactionId: submittedTxId,
             receiptUrl: receiptBase64 || "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=300&q=80",
             status: "Pending",
@@ -707,7 +700,7 @@
         try {
           const userStatusRef = db.doc(`artifacts/${safeAppId}/users/${request.userId}/profile/status`);
           const expirationDate = new Date();
-          expirationDate.setDate(expirationDate.getDate() + 30); 
+          expirationDate.setDate(expirationDate.getDate() + 30);
 
           await userStatusRef.set({
             role: 'premium',
@@ -774,7 +767,7 @@
                   <button onClick={() => { setIsAdminAuthenticated(false); sessionStorage.removeItem('is_admin_auth'); }} className="bg-red-900/60 text-red-200 px-2 py-0.5 rounded text-[10px]">ထွက်ရန် ✕</button>
                 </div>
               ) : (
-                <button onClick={() => setShowAdminLoginModal(true)} className="bg-indigo-600 px-3 py-1 rounded font-bold hover:bg-indigo-500 transition-colors">🔒 Admin Panel သို့ဝင်ရန်</button>
+                <button onClick={() => setShowAdminLoginModal(true)} className="bg-indigo-600 px-3 py-1 rounded font-bold transition-transform hover:scale-105">🔒 Admin Panel သို့ဝင်ရန်</button>
               )}
             </div>
             <div className="text-slate-400 flex items-center space-x-2">
@@ -798,7 +791,7 @@
               <div>
                 <h1 className="font-bold text-base text-white flex items-center gap-2">
                   <span>THET x DeepLearn AI Workspace</span>
-                  <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[10px] px-2 py-0.5 rounded font-mono">v2.9-Pro</span>
+                  <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[10px] px-2 py-0.5 rounded font-mono">v2.6-Share</span>
                 </h1>
                 <p className="text-xs text-slate-400">Owner: @thetphyo_tun</p>
               </div>
@@ -868,7 +861,7 @@
                 {[
                   { id: 'transcript', name: '📝 Transcript အပိုင်း (Groq)' },
                   { id: 'srt', name: '🎬 SRT Subtitle အပိုင်း (Groq)' },
-                  { id: 'translation', name: '🌐 AI Translation (၁၁ ဘာသာ)' },
+                  { id: 'translation', name: '🌐 AI Translation (Dual-Mode)' },
                   { id: 'tts', name: '🔊 Premium TTS (မြန်မာအသံစနစ်)' }
                 ].map(tab => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full text-left px-3 py-3 rounded-xl text-xs font-semibold transition-all ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-950'}`}>
@@ -946,9 +939,9 @@
               )}
 
               {/* DYNAMIC SYSTEM TABS */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
                 
-                {/* 📝 TRANSCRIPT SECTION (WITH SPEECH AUTO COMPRESSION) */}
+                {/* 📝 TRANSCRIPT SECTION */}
                 {activeTab === 'transcript' && (
                   <div className="space-y-4">
                     <h3 className="text-base font-bold text-white">📝 Transcript အပိုင်း (Groq Whisper-3 with Auto Speech Compression)</h3>
@@ -964,7 +957,7 @@
                     </button>
                     
                     {logs.length > 0 && (
-                      <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl font-mono text-xs text-slate-400 space-y-1 max-h-40 overflow-y-auto">
+                      <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl font-mono text-xs text-slate-400 space-y-1 max-h-60 overflow-y-auto">
                         {logs.map((log, idx) => <p key={idx}>• {log}</p>)}
                       </div>
                     )}
@@ -999,41 +992,23 @@
                   </div>
                 )}
 
-                {/* 🌐 AI TRANSLATION SECTION (11 LANGUAGES) */}
+                {/* 🌐 AI TRANSLATION SECTION */}
                 {activeTab === 'translation' && (
                   <div className="space-y-6">
                     <div className="border-b border-slate-850 pb-3">
-                      <h3 className="text-base font-bold text-white">🌐 AI Translation အပိုင်း (Dual-Mode 11 ဘာသာစကား)</h3>
-                      <p className="text-xs text-slate-400 mt-1">Transcript စာသားများ သို့မဟုတ် SRT Subtitle ဖိုင်များကို Timecode များ တစ်ပြားသားမျှမလွဲစေဘဲ မိမိကြိုက်နှစ်သက်ရာ ဘာသာစကားသို့ အလိုအလျောက် ပြန်ဆိုပေးနိုင်ပါသည်။</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1 bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <label className="text-xs font-semibold text-slate-400">Gemini API Key</label>
-                        <input type="password" value={userGeminiKey} onChange={(e) => { setUserGeminiKey(e.target.value); localStorage.setItem('gemini_api_key', e.target.value); }} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="Gemini Key ထည့်ရန် (ဥပမာ- AIzaSy...)" />
-                      </div>
-
-                      <div className="space-y-1 bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <label className="text-xs font-bold text-slate-400">🌐 ပြန်ဆိုလိုသည့် ဘာသာစကား ရွေးချယ်ပါ:</label>
-                        <select 
-                          value={targetLang} 
-                          onChange={(e) => setTargetLang(e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none font-medium cursor-pointer"
-                        >
-                          {languagesList.map(lang => (
-                            <option key={lang.id} value={lang.id}>{lang.name}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <h3 className="text-base font-bold text-white">🌐 AI Translation အပိုင်း (Dual-Mode Gemini Translator)</h3>
+                      <p className="text-xs text-slate-400 mt-1">Transcript စာသားများ သို့မဟုတ် SRT Subtitle ဖိုင်များကို Timecode များ တစ်ပြားသားမျှမလွဲစေဘဲ အင်္ဂလိပ်သို့ အလိုအလျောက် ပြန်ဆိုပေးနိုင်ပါသည်။</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Transcript Translator */}
                       <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800/80">
                         <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">၁။ Transcript ဘာသာပြန်ခြင်း</h4>
                         <button onClick={() => runTranslation('transcript')} className="w-full bg-indigo-600 hover:bg-indigo-700 py-2.5 rounded-xl font-bold text-xs">📝 Transcript Translate ➜</button>
                         <textarea rows="5" value={translatedText} onChange={(e) => setTranslatedText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none" placeholder="Translated transcript output..." />
                       </div>
 
+                      {/* SRT Subtitle Translator */}
                       <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800/80">
                         <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">၂။ SRT Subtitle ဘာသာပြန်ခြင်း</h4>
                         <button onClick={() => runTranslation('srt')} className="w-full bg-indigo-600 hover:bg-indigo-700 py-2.5 rounded-xl font-bold text-xs">🎬 SRT Subtitle Translate ➜</button>
@@ -1071,27 +1046,9 @@
                       </div>
                     </div>
 
-                    {/* Speed & Pitch Sliders */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800 mb-4">
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-slate-400">အမြန်နှုန်း (Speed):</span>
-                          <span className="text-indigo-400">{ttsSpeed}x</span>
-                        </div>
-                        <input type="range" min="0.5" max="2.0" step="0.1" value={ttsSpeed} onChange={(e) => setTtsSpeed(parseFloat(e.target.value))} className="w-full accent-indigo-500 cursor-pointer" />
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-slate-400">အသံအနိမ့်အမြင့် (Pitch):</span>
-                          <span className="text-indigo-400">{ttsPitch}</span>
-                        </div>
-                        <input type="range" min="0.5" max="2.0" step="0.1" value={ttsPitch} onChange={(e) => setTtsPitch(parseFloat(e.target.value))} className="w-full accent-indigo-500 cursor-pointer" />
-                      </div>
-                    </div>
-
                     <textarea rows="3" value={ttsInput} onChange={(e) => setTtsInput(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="အသံထွက်ဆိုလိုသည့် မြန်မာစာသားကို ရိုက်ထည့်ပါ..." />
                     
-                    <div className="flex flex-col sm:flex-row gap-4 items-center mt-2">
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
                       <button onClick={runNeuralTtsPlay} disabled={isSynthesizing} className="bg-indigo-600 hover:bg-indigo-700 py-3 px-6 rounded-xl text-xs font-bold transition-all shadow-lg">{isSynthesizing ? "အသံထုတ်လုပ်နေသည်..." : "🔊 အသံထုတ်လုပ်ပြီး နားထောင်မည်"}</button>
                       
                       {synthesizedAudioUrl && (
@@ -1158,7 +1115,7 @@
           {/* PAYMENT POPUP MODAL */}
           {showPaymentModal && (
             <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="bg-slate-900 border border-slate-800 max-w-lg w-full rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="bg-slate-900 border border-slate-800 max-lg w-full rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                 <div className="p-5 border-b border-slate-800 flex justify-between items-center">
                   <h3 className="font-bold text-white text-base">💎 Premium ဝယ်ယူရန် နှင့် သက်တမ်းတိုးရန်</h3>
                   <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-slate-200 text-lg">✕</button>
@@ -1194,6 +1151,9 @@
                     </div>
                   </form>
                 </div>
+                <div className="p-4 bg-slate-950 border-t border-slate-800 text-center">
+                  <a href="https://t.me/thetphyo_tun" target="_blank" rel="noreferrer" className="text-xs text-sky-400 hover:underline font-bold">ပြဿနာတစ်စုံတစ်ရာရှိပါက Telegram Account (@thetphyo_tun) သို့ ဆက်သွယ်ပါ။</a>
+                </div>
               </div>
             </div>
           )}
@@ -1227,6 +1187,7 @@
 
           <footer className="bg-slate-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500 mt-auto">
             <p>© 2026 THET x DeepLearn AI Workspace. All rights reserved.</p>
+            <p className="mt-1">Powered by Groq API Load Balancing & Gemini Translator</p>
           </footer>
 
         </div>
@@ -1238,6 +1199,5 @@
   </script>
 </body>
 </html>
-
 
 ```
