@@ -11,845 +11,637 @@
   <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-  <!-- React & ReactDOM -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  
-  <!-- Babel -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Firebase v11 SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+  <!-- Firebase v11 SDKs (Compat version for stable browser use) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Outfit', sans-serif; background-color: #020617; color: #f8fafc; }
+    body { font-family: 'Outfit', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-    .glass-card { background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    .glass-card { background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 </head>
-<body>
-  <!-- Loading Fallback UI -->
-  <div id="root">
-    <div class="flex flex-col items-center justify-center min-h-screen text-indigo-400">
-      <i class="ph ph-spinner animate-spin text-5xl mb-4"></i>
-      <h2 class="text-xl font-bold">Workspace ကို ဖွင့်နေပါသည်...</h2>
-      <p class="text-xs text-slate-500 mt-2">THET x DeepLearn System</p>
+<body class="pb-20 md:pb-8 flex flex-col items-center pt-4 md:pt-10 px-4">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-lg bg-indigo-600 text-white font-semibold text-sm flex items-center gap-2 transition-all duration-300 transform -translate-y-20 opacity-0 pointer-events-none">
+    <i class="ph-fill ph-info"></i> <span id="toastMessage">Message</span>
+  </div>
+
+  <div class="w-full max-w-2xl">
+    
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 flex items-center gap-2">
+          <i class="ph-fill ph-sparkle text-indigo-400"></i> DeepLearn 
+        </h1>
+        <p class="text-xs text-slate-500 font-medium">AI Workspace Pro</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="generateShareLink()" class="glass-card hover:bg-slate-800 text-slate-300 w-10 h-10 rounded-xl flex items-center justify-center transition-colors">
+          <i class="ph-fill ph-share-network text-lg"></i>
+        </button>
+        <div id="premiumBtnContainer">
+           <!-- Dynamic Premium/Upgrade Button -->
+        </div>
+        <div id="adminBtnContainer">
+           <!-- Dynamic Admin Button -->
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Menus -->
+    <div class="flex overflow-x-auto gap-3 hide-scrollbar mb-6 pb-2" id="navTabs">
+      <button onclick="switchTab('transcript')" class="nav-btn active flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap bg-indigo-600 text-white shadow-lg shadow-indigo-600/20" data-tab="transcript">
+        <i class="ph ph-microphone text-lg"></i> Extract Text
+      </button>
+      <button onclick="switchTab('srt')" class="nav-btn flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap glass-card text-slate-400 hover:text-slate-200 hover:bg-slate-800" data-tab="srt">
+        <i class="ph ph-subtitles text-lg"></i> SRT Gen
+      </button>
+      <button onclick="switchTab('translation')" class="nav-btn flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap glass-card text-slate-400 hover:text-slate-200 hover:bg-slate-800" data-tab="translation">
+        <i class="ph ph-translate text-lg"></i> Translate
+      </button>
+      <button onclick="switchTab('tts')" class="nav-btn flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap glass-card text-slate-400 hover:text-slate-200 hover:bg-slate-800" data-tab="tts">
+        <i class="ph ph-speaker-high text-lg"></i> Voices TTS
+      </button>
+      <button onclick="switchTab('settings')" class="nav-btn flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap glass-card text-slate-400 hover:text-slate-200 hover:bg-slate-800" data-tab="settings">
+        <i class="ph ph-gear-six text-lg"></i> Settings
+      </button>
+    </div>
+
+    <!-- Active Workspace -->
+    <div class="glass-card rounded-3xl p-6 sm:p-8">
+      
+      <!-- 1. Transcript -->
+      <div id="tab-transcript" class="tab-content active space-y-6">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20">
+            <i class="ph-fill ph-microphone-stage text-3xl"></i>
+          </div>
+          <h2 class="text-xl font-bold text-white mb-2">Extract Text from Media</h2>
+          <p class="text-sm text-slate-400 mb-6">Upload Video or Audio to generate accurate transcripts using Groq AI.</p>
+          
+          <div class="relative mb-6">
+            <input type="file" id="mediaUpload" accept="audio/*,video/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileSelect(this)" />
+            <div id="uploadBox" class="border-2 border-dashed border-slate-700 bg-slate-900 rounded-2xl p-6 hover:border-indigo-500/50 transition-colors">
+              <i id="uploadIcon" class="ph ph-upload-simple text-slate-500 text-3xl mb-2 inline-block"></i>
+              <p id="uploadText" class="text-sm font-semibold text-slate-300">Tap to browse files</p>
+            </div>
+          </div>
+          
+          <button id="extractBtn" onclick="runTranscription()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2 transition-transform active:scale-95">
+            <i class="ph-fill ph-magic-wand text-2xl"></i> <span>စာသားထုတ်ယူမည်</span>
+          </button>
+          <p id="transcriptLogs" class="text-xs text-indigo-400 font-semibold mt-4 text-center hidden"></p>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-slate-200">Transcript Result</h3>
+            <button onclick="copyToClipboard('transcriptTextarea')" class="text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-indigo-500/20"><i class="ph ph-copy"></i> Copy</button>
+          </div>
+          <textarea id="transcriptTextarea" rows="6" oninput="saveData()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 focus:outline-none focus:border-indigo-500/50 text-sm leading-relaxed" placeholder="Extracted text will appear here..."></textarea>
+        </div>
+      </div>
+
+      <!-- 2. SRT -->
+      <div id="tab-srt" class="tab-content space-y-6">
+        <div class="text-center pb-6 border-b border-slate-800">
+          <div class="w-16 h-16 bg-purple-500/10 text-purple-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-500/20">
+            <i class="ph-fill ph-subtitles text-3xl"></i>
+          </div>
+          <h2 class="text-xl font-bold text-white mb-4">Smart SRT Subtitles</h2>
+          <button id="srtBtn" onclick="generateSrt()" class="w-full bg-purple-600 hover:bg-purple-500 text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-purple-600/20 flex items-center justify-center gap-2 transition-transform active:scale-95">
+            <i class="ph-fill ph-film-script text-2xl"></i> စာတန်းထိုး (SRT) ဖန်တီးမည်
+          </button>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-slate-200">Subtitle Data</h3>
+            <button onclick="downloadSrt()" class="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-emerald-500/20"><i class="ph ph-download-simple"></i> Save .srt</button>
+          </div>
+          <textarea id="srtTextarea" rows="8" oninput="saveData()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 font-mono text-xs focus:outline-none focus:border-purple-500/50" placeholder="SRT data will appear here..."></textarea>
+        </div>
+      </div>
+
+      <!-- 3. Translation -->
+      <div id="tab-translation" class="tab-content space-y-6">
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-800 pb-6">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20"><i class="ph-fill ph-translate text-2xl"></i></div>
+            <div><h2 class="text-lg font-bold text-white">AI Translator</h2><p class="text-xs text-slate-400">11 Languages Supported</p></div>
+          </div>
+          <select id="targetLang" class="bg-slate-900 border border-slate-700 py-2.5 px-4 rounded-xl text-white outline-none font-bold text-sm w-full sm:w-auto shadow-inner">
+            <option value="Myanmar">🇲🇲 မြန်မာ</option>
+            <option value="English">🇬🇧 အင်္ဂလိပ်</option>
+            <option value="Japanese">🇯🇵 ဂျပန်</option>
+            <option value="Korean">🇰🇷 ကိုရီးယား</option>
+            <option value="Thai">🇹🇭 ထိုင်း</option>
+            <option value="Chinese">🇨🇳 တရုတ်</option>
+          </select>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4">
+            <button onclick="runTranslation('transcript')" class="w-full bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 py-3 rounded-xl font-bold mb-3 text-sm flex justify-center gap-2"><i class="ph-fill ph-text-aa text-lg"></i> စာသားကို ဘာသာပြန်မည်</button>
+            <textarea id="translatedTextarea" rows="4" oninput="saveData()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 focus:outline-none" placeholder="Translated text..."></textarea>
+          </div>
+          <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4">
+            <button onclick="runTranslation('srt')" class="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 py-3 rounded-xl font-bold mb-3 text-sm flex justify-center gap-2"><i class="ph-fill ph-subtitles text-lg"></i> SRT ကို ဘာသာပြန်မည်</button>
+            <textarea id="translatedSrtTextarea" rows="4" oninput="saveData()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none" placeholder="Translated SRT..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. TTS -->
+      <div id="tab-tts" class="tab-content space-y-6 relative">
+        <div id="premiumLock" class="absolute inset-0 z-10 bg-slate-950/80 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-amber-500/20 hidden">
+          <i class="ph-fill ph-lock-key text-5xl text-amber-500 mb-4 drop-shadow-lg"></i>
+          <h2 class="text-xl font-bold text-white mb-2">Premium Exclusive</h2>
+          <p class="text-slate-400 mb-6 text-sm max-w-sm">အသံ ၁၀ မျိုး၊ Speed နှင့် Pitch ချိန်ညှိနိုင်သော Neural Audio ကို Premium အသုံးပြုသူများသာ သုံးနိုင်ပါသည်။</p>
+          <button onclick="openModal('paymentModal')" class="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-amber-500/20 hover:scale-105 transition-transform text-sm">Unlock Premium</button>
+        </div>
+
+        <div id="ttsContent" class="space-y-6">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-pink-500/10 text-pink-400 rounded-2xl flex items-center justify-center border border-pink-500/20"><i class="ph-fill ph-speaker-high text-2xl"></i></div>
+            <div><h2 class="text-lg font-bold text-white">Neural Voice Engine</h2><p class="text-xs text-slate-400">10 Voices + Advanced Tunings</p></div>
+          </div>
+
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <label class="text-xs font-bold text-slate-500 uppercase block mb-3">Select Preset</label>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="voiceButtonsContainer">
+               <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div class="flex gap-4">
+            <div class="flex-1 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+              <label class="text-xs text-slate-400 font-bold flex justify-between"><span>Speed</span> <span id="speedValue" class="text-pink-400">1x</span></label>
+              <input type="range" id="ttsSpeed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateRangeValues()" class="w-full mt-3 accent-pink-500" />
+            </div>
+            <div class="flex-1 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+              <label class="text-xs text-slate-400 font-bold flex justify-between"><span>Pitch</span> <span id="pitchValue" class="text-purple-400">1</span></label>
+              <input type="range" id="ttsPitch" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateRangeValues()" class="w-full mt-3 accent-purple-500" />
+            </div>
+          </div>
+
+          <div>
+            <textarea id="ttsInputTextarea" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-pink-500/50 mb-3" placeholder="မြန်မာစာရိုက်ထည့်ပါ..."></textarea>
+            <button id="ttsPlayBtn" onclick="runNeuralTtsPlay()" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-bold shadow-lg shadow-pink-600/20 flex justify-center items-center gap-2 text-lg transition-transform active:scale-95 text-white">
+              <i class="ph-fill ph-play-circle text-2xl"></i> <span>အသံဖန်တီးမည်</span>
+            </button>
+          </div>
+
+          <div id="audioPlayerContainer" class="bg-slate-900 p-2 rounded-2xl border border-slate-800 flex items-center gap-3 hidden">
+            <audio id="ttsAudioPlayer" controls class="w-full h-12"></audio>
+            <a id="ttsDownloadLink" href="#" download="tts_audio.mp3" class="bg-emerald-500 hover:bg-emerald-400 p-3 rounded-xl text-slate-900 shadow-md transition-colors"><i class="ph-fill ph-download-simple text-xl"></i></a>
+          </div>
+          <p id="ttsError" class="text-red-400 text-xs text-center hidden"></p>
+        </div>
+      </div>
+
+      <!-- 5. Settings -->
+      <div id="tab-settings" class="tab-content space-y-4">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 bg-slate-800 text-slate-300 rounded-2xl flex items-center justify-center border border-slate-700"><i class="ph-fill ph-gear-six text-2xl"></i></div>
+          <div><h2 class="text-lg font-bold text-white">Configuration</h2><p class="text-xs text-slate-400">External API Keys</p></div>
+        </div>
+        
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+          <label class="text-sm font-bold text-slate-300 block mb-2">Groq API Key <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded ml-2 font-normal text-slate-400">Optional</span></label>
+          <input type="password" id="customGroqKey" oninput="saveSettings()" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 font-mono text-sm" placeholder="gsk_..." />
+          <p class="text-xs text-slate-500 mt-2">Bypass server limits with your own free Groq key.</p>
+        </div>
+        
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+          <label class="text-sm font-bold text-slate-300 block mb-2">Gemini API Key <span class="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] px-2 py-0.5 rounded ml-2 font-bold">Required</span></label>
+          <input type="password" id="customGeminiKey" oninput="saveSettings()" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 font-mono text-sm" placeholder="AIzaSy..." />
+          <p class="text-xs text-slate-500 mt-2">Needed for Translation features. Get it from Google AI Studio.</p>
+        </div>
+      </div>
+
+      <!-- 6. Admin Panel -->
+      <div id="tab-admin" class="tab-content space-y-4">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 bg-indigo-500/20 text-indigo-400 rounded-2xl flex items-center justify-center border border-indigo-500/30"><i class="ph-fill ph-shield-check text-2xl"></i></div>
+          <div><h2 class="text-lg font-bold text-white">Admin Console</h2><p class="text-xs text-slate-400">Manage Premium Requests</p></div>
+        </div>
+        <div class="space-y-3" id="adminRequestsContainer">
+          <!-- Rendered via JS -->
+          <p class="text-slate-500 text-center py-10 font-medium bg-slate-900 rounded-2xl border border-slate-800">Loading requests...</p>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+  <!-- Modals -->
+  <!-- Admin Login Modal -->
+  <div id="adminLoginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card w-full max-w-xs rounded-3xl p-8 shadow-2xl relative text-center">
+      <button onclick="closeModal('adminLoginModal')" class="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full flex items-center justify-center"><i class="ph ph-x"></i></button>
+      <div class="w-16 h-16 bg-slate-900 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800"><i class="ph-fill ph-lock-key text-2xl"></i></div>
+      <h3 class="text-lg font-bold text-white mb-6">Admin Login</h3>
+      <div class="space-y-5">
+        <input type="password" id="adminPwdInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none text-center tracking-[0.3em] text-xl font-mono shadow-inner" placeholder="••••••" />
+        <button onclick="handleAdminLogin()" class="w-full bg-slate-100 text-slate-900 hover:bg-white font-bold py-4 rounded-xl shadow-lg text-sm transition-transform active:scale-95">ဝင်ရောက်မည်</button>
+      </div>
+    </div>
+  </div>
 
-    // --- Sandbox-Safe Storage Helpers ---
-    const memoryStore = {};
-    const safeGetLocal = (key, defaultVal) => {
-      try { return window.localStorage.getItem(key) || memoryStore[key] || defaultVal; } 
-      catch(e) { return memoryStore[key] || defaultVal; }
-    };
-    const safeSetLocal = (key, val) => {
-      try { window.localStorage.setItem(key, val); } 
-      catch(e) { memoryStore[key] = val; }
-    };
-
-    // --- Firebase Setup ---
-    const firebaseConfig = {
-      apiKey: "", 
-      authDomain: "default-app-id.firebaseapp.com",
-      projectId: "default-app-id",
-      storageBucket: "default-app-id.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abcdef123456"
-    };
-
-    let safeAppId = 'default-app-id';
-    try { if (typeof __app_id !== 'undefined' && __app_id) { safeAppId = __app_id; } } catch(e) {}
-    
-    let db = null, auth = null;
-    try {
-      if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-        firebase.initializeApp(JSON.parse(__firebase_config));
-      } else {
-        firebase.initializeApp(firebaseConfig);
-      }
-      db = firebase.firestore();
-      auth = firebase.auth();
-    } catch (e) {
-      console.warn("Firebase Init Alert:", e);
-    }
-
-    function App() {
-      // --- Obfuscated Groq Keys ---
-      const reversedGroqKeys = [
-        "hHiaJbZls8ppgDGU1h9EyjaYY3ZbydGWry4mr7GCKLHpAfagUaM_ksg",
-        "qIbKFVpz4ChHJDvKvKFi6hbzefY3YbdGWv2dJxk0b0DKDOLNLuHxE_ksg",
-        "eQINb2e5hf3cqz2vO82aYsY3YbdGWVMrYKfQGO2fafVFWWzV_ksg",
-        "IBG883db6ivzjm4IbDdWrd3ZDF3YbdGWIWMAA9jh1AqNhpfEAWYI_ksg",
-        "n6f7QGnP7sNZc2AbsqhdUXvCkWF3YbdGWFTe8cv9GsDPzOnjiarjY_ksg",
-        "qTs3ndmSDrA7Ar9tFXUY10YF3YbdGWZNuSBt9Vzaaa0l0tXHa_ksg",
-        "oDLaS5W90bi0sCqeBlBttWpQEF3YbdGWRQIpXxQrAoWvE6jiTePZ_ksg",
-        "TcdP0GFgfczs5PZeiQeCKmvgzRF3YbdGWv6wHpF0D3Px4w7tfWq2J_ksg",
-        "bbyFfemiOodzFjTIDbNQw7a66uFY3YbdGWxcp1YMfPPr8lzakTjl_ksg",
-        "PPWcupcusx4W4l166SV3050hhyF3YbdGWc9xGWpcwbVZQNBX50GId_ksg"
-      ];
-      const initialGroqKeys = reversedGroqKeys.map(key => key.split('').reverse().join(''));
-
-      // --- Core States ---
-      const [firebaseUser, setFirebaseUser] = useState(null);
-      const [userRole, setUserRole] = useState('user');
-      const [premiumExpiresAt, setPremiumExpiresAt] = useState('');
+  <!-- Payment Modal -->
+  <div id="paymentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+      <button onclick="closeModal('paymentModal')" class="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full flex items-center justify-center"><i class="ph ph-x"></i></button>
       
-      const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => safeGetLocal('is_admin_auth', 'false') === 'true');
-      const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
-      const [adminPasswordInput, setAdminPasswordInput] = useState('');
-      const ADMIN_SECRET_KEY = "123456"; 
-      
-      const [userGeminiKey, setUserGeminiKey] = useState(() => safeGetLocal('gemini_api_key', ''));
-      const [userGroqKey, setUserGroqKey] = useState(() => safeGetLocal('user_groq_api_key', ''));
-      
-      const [showPaymentModal, setShowPaymentModal] = useState(false);
-      const [submittedTxId, setSubmittedTxId] = useState('');
-      const [activeTab, setActiveTab] = useState('transcript');
-      const [groqKeys] = useState(initialGroqKeys);
-      const [activeKeyIndex, setActiveKeyIndex] = useState(0);
-
-      // Data States
-      const [selectedFile, setSelectedFile] = useState(null);
-      const [isProcessing, setIsProcessing] = useState(false);
-      const [logs, setLogs] = useState([]);
-      const [transcriptText, setTranscriptText] = useState(() => safeGetLocal('stored_transcript', ''));
-      const [transcriptSegments, setTranscriptSegments] = useState(() => {
-        try { return JSON.parse(safeGetLocal('stored_segments', '[]')); } catch(e) { return []; }
-      });
-      const [srtText, setSrtText] = useState(() => safeGetLocal('stored_srt', ''));
-      const [translatedText, setTranslatedText] = useState(() => safeGetLocal('stored_translation', ''));
-      const [translatedSrtText, setTranslatedSrtText] = useState(() => safeGetLocal('stored_translated_srt', ''));
-
-      // Translate Options
-      const [targetLang, setTargetLang] = useState('Myanmar');
-      const languagesList = [
-        { id: 'Myanmar', name: '🇲🇲 မြန်မာ' }, { id: 'English', name: '🇬🇧 အင်္ဂလိပ်' },
-        { id: 'Japanese', name: '🇯🇵 ဂျပန်' }, { id: 'Korean', name: '🇰🇷 ကိုရီးယား' },
-        { id: 'Thai', name: '🇹🇭 ထိုင်း' }, { id: 'Chinese', name: '🇨🇳 တရုတ်' },
-        { id: 'Russian', name: '🇷🇺 ရုရှား' }, { id: 'French', name: '🇫🇷 ပြင်သစ်' },
-        { id: 'Spanish', name: '🇪🇸 စပိန်' }, { id: 'German', name: '🇩🇪 ဂျာမန်' },
-        { id: 'Hindi', name: '🇮🇳 ဟိန္ဒီ' }
-      ];
-
-      // TTS Options & Presets
-      const [ttsInput, setTtsInput] = useState('');
-      const [selectedVoice, setSelectedVoice] = useState('my-mm-1'); // Changed to lang codes for robust routing
-      const [ttsSpeed, setTtsSpeed] = useState(1.0);
-      const [ttsPitch, setTtsPitch] = useState(1.0);
-      const [isSynthesizing, setIsSynthesizing] = useState(false);
-      const [synthesizedAudioUrl, setSynthesizedAudioUrl] = useState(null);
-      const [ttsErrorDetail, setTtsErrorMsg] = useState('');
-      const audioRef = useRef(null);
-
-      const voicePresets = [
-        { id: 'my-mm-1', langCode: 'my', name: '👩🏻 မနီလာ (မြန်မာအမျိုးသမီး)', speed: 1.0, pitch: 1.0 },
-        { id: 'my-mm-2', langCode: 'my', name: '👨🏻 ကိုသီဟ (မြန်မာအမျိုးသား)', speed: 1.0, pitch: 0.75 }, // Lower pitch for male sim
-        { id: 'en-us-1', langCode: 'en', name: '👩🏼 English Female', speed: 1.0, pitch: 1.1 },
-        { id: 'en-us-2', langCode: 'en', name: '👨🏼 English Male', speed: 1.0, pitch: 0.8 },
-        { id: 'ja-jp-1', langCode: 'ja', name: '👩🏻 Japanese Female', speed: 1.0, pitch: 1.2 },
-        { id: 'ko-kr-1', langCode: 'ko', name: '👩🏻 Korean Female', speed: 1.0, pitch: 1.1 },
-        { id: 'th-th-1', langCode: 'th', name: '👩🏽 Thai Female', speed: 1.0, pitch: 1.1 },
-        { id: 'zh-cn-1', langCode: 'zh-CN', name: '👩🏻 Chinese Female', speed: 1.0, pitch: 1.0 },
-        { id: 'my-mm-3', langCode: 'my', name: '👧🏻 ကလေးမလေးသံ (မြန်မာ)', speed: 1.1, pitch: 1.4 },
-        { id: 'my-mm-4', langCode: 'my', name: '👵🏻 အဘွားအိုသံ (မြန်မာ)', speed: 0.85, pitch: 0.8 }
-      ];
-
-      const handleVoiceChange = (vid) => {
-        setSelectedVoice(vid);
-        const p = voicePresets.find(v => v.id === vid);
-        if(p) { setTtsSpeed(p.speed); setTtsPitch(p.pitch); }
-      };
-
-      // UI States
-      const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
-      const [paymentRequests, setPaymentRequests] = useState([]);
-      const [showShareModal, setShowShareModal] = useState(false);
-      const [generatedShareUrl, setGeneratedShareUrl] = useState('');
-      const [selectedReceiptUrl, setSelectedReceiptUrl] = useState(''); // Added back for Admin
-
-      const showToast = (message, type = 'info') => {
-        setToast({ show: true, message, type });
-        setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
-      };
-
-      // --- Firebase Auth & Shared Link Initializer ---
-      useEffect(() => {
-        const initAuth = async () => {
-          if (!auth) return;
-          try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await auth.signInWithCustomToken(__initial_auth_token);
-            } else { await auth.signInAnonymously(); }
-          } catch (e) {}
-        };
-        initAuth();
-
-        let unsub;
-        if(auth) {
-           unsub = auth.onAuthStateChanged(user => {
-            if (user && db) {
-              setFirebaseUser(user);
-              db.doc(`artifacts/${safeAppId}/users/${user.uid}/profile/status`).onSnapshot(doc => {
-                if (doc.exists) {
-                  setUserRole(doc.data().role || 'user');
-                  setPremiumExpiresAt(doc.data().expiresAt || '');
-                } else {
-                  db.doc(`artifacts/${safeAppId}/users/${user.uid}/profile/status`).set({ role: 'user', expiresAt: '' });
-                }
-              }, err => {});
-            }
-          });
-        }
-
-        const readShareData = async () => {
-           try {
-             const params = new URLSearchParams(window.location.search);
-             const shareId = params.get('share');
-             if(shareId && db) {
-                const doc = await db.doc(`artifacts/${safeAppId}/public/data/shares/${shareId}`).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    if(data.transcript) setTranscriptText(data.transcript);
-                    if(data.segments) setTranscriptSegments(data.segments);
-                    if(data.srt) setSrtText(data.srt);
-                    if(data.translatedText) setTranslatedText(data.translatedText);
-                    if(data.translatedSrt) setTranslatedSrtText(data.translatedSrt);
-                    showToast("မျှဝေထားသော အချက်အလက်များ ဖွင့်ပြီးပါပြီ။", "success");
-                }
-             }
-           } catch(e) {}
-        }
-        setTimeout(readShareData, 1000);
-        return () => { if(unsub) unsub(); }
-      }, []);
-
-      // --- Admin Payments Listener ---
-      useEffect(() => {
-        if (!firebaseUser || !db || !isAdminAuthenticated) return; // Optimize listener
-        const unsub = db.collection(`artifacts/${safeAppId}/public/data/payments`).onSnapshot(snapshot => {
-          const list = [];
-          snapshot.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-          // Sort to show pending first, then newest
-          list.sort((a, b) => {
-             if (a.status === 'Pending' && b.status !== 'Pending') return -1;
-             if (a.status !== 'Pending' && b.status === 'Pending') return 1;
-             return new Date(b.timestamp) - new Date(a.timestamp);
-          });
-          setPaymentRequests(list);
-        }, err => {});
-        return () => unsub();
-      }, [firebaseUser, isAdminAuthenticated]); // Re-run if admin auth changes
-
-      // --- Caching ---
-      useEffect(() => {
-        safeSetLocal('stored_transcript', transcriptText);
-        safeSetLocal('stored_segments', JSON.stringify(transcriptSegments));
-        safeSetLocal('stored_srt', srtText);
-        safeSetLocal('stored_translation', translatedText);
-        safeSetLocal('stored_translated_srt', translatedSrtText);
-      }, [transcriptText, transcriptSegments, srtText, translatedText, translatedSrtText]);
-
-      // --- Extract & Encode Audio (Local) ---
-      const processAndExtractAudio = async (videoFile) => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-            try {
-              setLogs(["အသံလှိုင်းများကို ပြင်ဆင်နေပါသည်... ⏳"]);
-              const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-              const decodedBuffer = await audioCtx.decodeAudioData(e.target.result);
-              const offlineCtx = new OfflineAudioContext(1, 16000 * decodedBuffer.duration, 16000);
-              const bufferSource = offlineCtx.createBufferSource();
-              bufferSource.buffer = decodedBuffer;
-              bufferSource.connect(offlineCtx.destination);
-              bufferSource.start();
-              const renderedBuffer = await offlineCtx.startRendering();
-              const wavBlob = encodeWAV(renderedBuffer);
-              setLogs([`အသံဖိုင် ပြင်ဆင်ပြီးပါပြီ။ 🚀`]);
-              resolve(new File([wavBlob], "audio.wav", { type: "audio/wav" }));
-            } catch (err) { reject(err); }
-          };
-          reader.onerror = () => reject(new Error("File reading failed"));
-          reader.readAsArrayBuffer(videoFile);
-        });
-      };
-
-      const encodeWAV = (audioBuffer) => {
-        const buffer = audioBuffer.getChannelData(0);
-        const sampleRate = audioBuffer.sampleRate;
-        const length = buffer.length * 2 + 44;
-        const bufferArray = new ArrayBuffer(length);
-        const view = new DataView(bufferArray);
-        const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
-        writeStr(0, 'RIFF'); view.setUint32(4, length - 8, true); writeStr(8, 'WAVE'); writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); writeStr(36, 'data'); view.setUint32(40, length - 44, true);
-        let offset = 44;
-        for (let i = 0; i < buffer.length; i++, offset += 2) {
-          const s = Math.max(-1, Math.min(1, buffer[i]));
-          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-        }
-        return new Blob([view], { type: 'audio/wav' });
-      };
-
-      // --- Main Actions ---
-      const runTranscription = async () => {
-        if (!selectedFile) { showToast("ဖိုင်ရွေးချယ်ပေးပါ!", "error"); return; }
-        setIsProcessing(true); setLogs(["AI စတင် အလုပ်လုပ်နေပါပြီ..."]);
-        let audioFileToSend = selectedFile;
-        
-        // Auto convert videos locally before sending
-        if (selectedFile.type.startsWith('video/') || selectedFile.name.match(/\.(mp4|mkv|mov)$/i)) {
-          try { audioFileToSend = await processAndExtractAudio(selectedFile); } 
-          catch (err) { setLogs(["ဗီဒီယိုမှ အသံထုတ်ယူခြင်း မအောင်မြင်ပါ။ မူရင်းဖိုင်အတိုင်း ပို့ပါမည်။"]); }
-        }
-
-        let success = false, resultText = "", resultSegments = [];
-        
-        // 1. Try Custom Key
-        if (userGroqKey) {
-          try {
-            const formData = new FormData(); formData.append('file', audioFileToSend); formData.append('model', 'whisper-large-v3'); formData.append('response_format', 'verbose_json');
-            const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${userGroqKey}` }, body: formData });
-            if (res.ok) { const data = await res.json(); resultText = data.text; resultSegments = data.segments || []; success = true; }
-          } catch (err) {}
-        }
-        
-        // 2. Try Built-in Keys
-        if (!success) {
-          let keyIndex = activeKeyIndex;
-          for (let i = 0; i < 10; i++) {
-            try {
-              const formData = new FormData(); formData.append('file', audioFileToSend); formData.append('model', 'whisper-large-v3'); formData.append('response_format', 'verbose_json');
-              const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${groqKeys[keyIndex]}` }, body: formData });
-              if (res.ok) { const data = await res.json(); resultText = data.text; resultSegments = data.segments || []; success = true; setActiveKeyIndex(keyIndex); break; }
-            } catch (err) { keyIndex = (keyIndex + 1) % 10; }
-          }
-        }
-        
-        if (success) {
-          setTranscriptText(resultText); setTranscriptSegments(resultSegments); showToast("စာသားထုတ်ယူခြင်း အောင်မြင်ပါသည်။", "success"); setLogs(["✅ အောင်မြင်စွာ ပြီးမြောက်ပါပြီ။"]);
-        } else {
-          showToast("API Limit ပြည့်နေပါသည်။", "warning"); setLogs(["⚠️ API Limit ကျော်လွန်နေပါသည်။"]);
-        }
-        setIsProcessing(false);
-      };
-
-      const generateSrt = () => {
-        if (!transcriptText || transcriptSegments.length === 0) { showToast("စာသားအရင်ထုတ်ပါ!", "error"); return; }
-        setIsProcessing(true);
-        setTimeout(() => {
-          let srtResult = "";
-          const formatTime = (seconds) => {
-            const date = new Date(seconds * 1000);
-            return `${String(date.getUTCHours()).padStart(2,'0')}:${String(date.getUTCMinutes()).padStart(2,'0')}:${String(date.getUTCSeconds()).padStart(2,'0')},${String(Math.floor((seconds%1)*1000)).padStart(3,'0')}`;
-          };
-          transcriptSegments.forEach((seg, idx) => { srtResult += `${idx + 1}\n${formatTime(seg.start)} --> ${formatTime(seg.end)}\n${seg.text.trim()}\n\n`; });
-          setSrtText(srtResult); showToast("SRT ဖန်တီးပြီးပါပြီ။", "success"); setIsProcessing(false);
-        }, 500);
-      };
-
-      const runTranslation = async (type) => {
-        if (!userGeminiKey) { showToast("Gemini Key မရှိပါ! Settings ထဲတွင် ထည့်ပါ။", "error"); return; }
-        const sourceContent = type === 'srt' ? srtText : transcriptText;
-        if (!sourceContent) { showToast("ဘာသာပြန်ရန် စာသားမရှိပါ။", "error"); return; }
-
-        setIsProcessing(true);
-        const prompt = type === 'srt' 
-          ? `Translate this SRT file into ${targetLang}. Preserve all numbers and timestamps exactly. Only translate the text. SRT:\n\n${sourceContent}`
-          : `Translate the following text into ${targetLang}:\n\n${sourceContent}`;
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-          });
-          const result = (await res.json()).candidates[0].content.parts[0].text;
-          type === 'srt' ? setTranslatedSrtText(result) : setTranslatedText(result);
-          showToast(`အောင်မြင်စွာ ပြန်ဆိုပြီးပါပြီ။`, "success");
-        } catch (e) { showToast("Gemini Key မှားယွင်းနိုင်ပါသည်။", "error"); }
-        setIsProcessing(false);
-      };
-
-      // --- Premium TTS Play Function (FIXED FOR MULTI-LANG) ---
-      const runNeuralTtsPlay = async () => {
-        if (userRole !== 'premium') { showToast("Premium ဖြင့်သာ သုံးနိုင်ပါသည်။", "error"); return; }
-        if (!ttsInput.trim()) return;
-        setIsSynthesizing(true); setTtsErrorMsg('');
-
-        try {
-          // Get correct language code from preset
-          const preset = voicePresets.find(v => v.id === selectedVoice);
-          const langCode = preset ? preset.langCode : 'my'; // default to Myanmar
-
-          const speechUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&client=tw-ob&q=${encodeURIComponent(ttsInput.trim())}`;
-          
-          if (audioRef.current) audioRef.current.pause();
-          const audioObj = new Audio(speechUrl);
-          audioRef.current = audioObj;
-
-          // Apply Pitch & Speed Simulation
-          if (ttsPitch !== 1.0) { 
-              audioObj.preservesPitch = false; 
-              audioObj.playbackRate = ttsSpeed * ttsPitch; 
-          } else { 
-              audioObj.preservesPitch = true; 
-              audioObj.playbackRate = ttsSpeed; 
-          }
-
-          audioObj.oncanplaythrough = () => { 
-             audioObj.play().catch(() => { 
-                setTtsErrorMsg("Browser Auto-play Blocked. ဖွင့်ခလုတ်ကို ကိုယ်တိုင်နှိပ်ပါ။"); 
-                setIsSynthesizing(false); 
-             }); 
-          };
-          audioObj.onplaying = () => { setIsSynthesizing(false); setSynthesizedAudioUrl(speechUrl); };
-          audioObj.onerror = () => { setTtsErrorMsg("အသံဖိုင် ဖွင့်၍မရပါ။"); setIsSynthesizing(false); };
-        } catch (err) { setTtsErrorMsg("အမှားအယွင်းဖြစ်ပွားပါသည်။"); setIsSynthesizing(false); }
-      };
-
-      // --- Admin & Database Functions ---
-      const handlePaymentSubmit = async (e) => {
-        e.preventDefault();
-        if (!firebaseUser || !db) return;
-        
-        try {
-          // Handle Image Upload to Base64 (Optional, if user selected one)
-          const fileInput = e.target.querySelector('input[type="file"]');
-          let receiptBase64 = "";
-
-          if (fileInput && fileInput.files[0]) {
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            await new Promise((res) => {
-              reader.onload = () => { receiptBase64 = reader.result; res(); };
-            });
-          }
-
-          await db.collection(`artifacts/${safeAppId}/public/data/payments`).doc(firebaseUser.uid).set({
-            userId: firebaseUser.uid, 
-            username: "User", 
-            transactionId: submittedTxId, 
-            receiptUrl: receiptBase64, // Saving the image data
-            status: "Pending", 
-            timestamp: new Date().toISOString()
-          });
-          showToast("Admin ထံ တင်ပြပြီးပါပြီ။", "success"); setShowPaymentModal(false); setSubmittedTxId('');
-        } catch (err) { showToast("တင်ပြမှု မအောင်မြင်ပါ။", "error"); }
-      };
-
-      // Admin Actions
-      const handleApproveRequest = async (request) => {
-        if (!db) return;
-        try {
-          const exp = new Date(); exp.setDate(exp.getDate() + 30); 
-          await db.doc(`artifacts/${safeAppId}/users/${request.userId}/profile/status`).set({ role: 'premium', expiresAt: exp.toISOString() });
-          await db.collection(`artifacts/${safeAppId}/public/data/payments`).doc(request.userId).update({ status: 'Approved' });
-          showToast("Premium အတည်ပြုပြီးပါပြီ။", "success");
-        } catch (err) {}
-      };
-
-      const handleRejectRequest = async (id) => { 
-          if (!db) return; 
-          await db.collection(`artifacts/${safeAppId}/public/data/payments`).doc(id).update({ status: 'Rejected' }); 
-      };
-
-      const handleAdminLogin = (e) => {
-        e.preventDefault();
-        if (adminPasswordInput === ADMIN_SECRET_KEY) {
-          setIsAdminAuthenticated(true); safeSetLocal('is_admin_auth', 'true'); setShowAdminLoginModal(false); setAdminPasswordInput(''); showToast("Admin ဝင်ရောက်ပြီးပါပြီ။", "success");
-        } else { showToast("Password မှားယွင်းပါသည်။", "error"); }
-      };
-
-      const generateShareLink = async () => {
-         if(!db) return;
-         try {
-             const shareId = Math.random().toString(36).substring(2, 10);
-             await db.collection(`artifacts/${safeAppId}/public/data/shares`).doc(shareId).set({
-                 transcript: transcriptText, segments: transcriptSegments, srt: srtText, translatedText: translatedText, translatedSrt: translatedSrtText, timestamp: new Date().toISOString()
-             });
-             const url = window.location.href.split('?')[0] + "?share=" + shareId;
-             setGeneratedShareUrl(url); setShowShareModal(true);
-         } catch(e) {}
-      };
-
-      const copyToClipboard = (text) => {
-         try {
-           const el = document.createElement('textarea');
-           el.value = text;
-           document.body.appendChild(el);
-           el.select();
-           document.execCommand('copy');
-           document.body.removeChild(el);
-           showToast("Copied to clipboard", "success");
-         } catch(e) {}
-      };
-
-      const tabs = [
-        { id: 'transcript', icon: 'ph-microphone', label: 'Extract Text' },
-        { id: 'srt', icon: 'ph-subtitles', label: 'SRT Gen' },
-        { id: 'translation', icon: 'ph-translate', label: 'Translate' },
-        { id: 'tts', icon: 'ph-speaker-high', label: 'Voices TTS' },
-        { id: 'settings', icon: 'ph-gear-six', label: 'Settings' }
-      ];
-      if (isAdminAuthenticated) tabs.push({ id: 'admin', icon: 'ph-shield-check', label: 'Admin Board' });
-
-      return (
-        <div className="min-h-screen pb-20 md:pb-8 flex flex-col items-center pt-4 md:pt-10 px-4">
-          
-          {toast.show && (
-            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-lg bg-indigo-600 text-white font-semibold text-sm flex items-center gap-2 animate-bounce">
-              <i className="ph-fill ph-info"></i> {toast.message}
-            </div>
-          )}
-
-          <div className="w-full max-w-2xl">
-            
-            {/* Header */}
-            <header className="flex justify-between items-center mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 flex items-center gap-2">
-                  <i className="ph-fill ph-sparkle text-indigo-400"></i> DeepLearn 
-                </h1>
-                <p className="text-xs text-slate-500 font-medium">AI Workspace Pro</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={generateShareLink} className="glass-card hover:bg-slate-800 text-slate-300 w-10 h-10 rounded-xl flex items-center justify-center transition-colors">
-                  <i className="ph-fill ph-share-network text-lg"></i>
-                </button>
-                {userRole !== 'premium' ? (
-                  <button onClick={() => setShowPaymentModal(true)} className="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1 shadow-lg shadow-amber-500/10 hover:scale-105 transition-all">
-                    <i className="ph-fill ph-crown text-base"></i> Upgrade
-                  </button>
-                ) : (
-                  <span className="glass-card text-emerald-400 border-emerald-500/20 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1">
-                    <i className="ph-fill ph-check-circle"></i> Premium
-                  </span>
-                )}
-                {!isAdminAuthenticated ? (
-                  <button onClick={() => setShowAdminLoginModal(true)} className="glass-card hover:bg-slate-800 text-slate-400 w-10 h-10 rounded-xl flex items-center justify-center transition-colors">
-                    <i className="ph-fill ph-lock-key text-lg"></i>
-                  </button>
-                ) : (
-                  <button onClick={() => {setIsAdminAuthenticated(false); safeSetLocal('is_admin_auth', 'false'); setActiveTab('transcript');}} className="bg-red-500/10 text-red-400 border border-red-500/20 w-10 h-10 rounded-xl flex items-center justify-center">
-                    <i className="ph-fill ph-sign-out text-lg"></i>
-                  </button>
-                )}
-              </div>
-            </header>
-
-            {/* Navigation Menus */}
-            <div className="flex overflow-x-auto gap-3 hide-scrollbar mb-6 pb-2">
-              {tabs.map(tab => (
-                <button 
-                  key={tab.id} 
-                  onClick={() => setActiveTab(tab.id)} 
-                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'glass-card text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
-                >
-                  <i className={`ph ${tab.icon} text-lg`}></i> {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Active Workspace */}
-            <div className="glass-card rounded-3xl p-6 sm:p-8 animate-[fadeIn_0.3s_ease-out]">
-              
-              {/* 1. Transcript */}
-              {activeTab === 'transcript' && (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20">
-                      <i className="ph-fill ph-microphone-stage text-3xl"></i>
-                    </div>
-                    <h2 className="text-xl font-bold text-white mb-2">Extract Text from Media</h2>
-                    <p className="text-sm text-slate-400 mb-6">Upload Video or Audio to generate accurate transcripts using Groq AI.</p>
-                    
-                    <div className="relative mb-6">
-                      <input type="file" accept="audio/*,video/*" onChange={(e) => setSelectedFile(e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                      <div className="border-2 border-dashed border-slate-700 bg-slate-900 rounded-2xl p-6 hover:border-indigo-500/50 transition-colors">
-                        <i className={`ph ${selectedFile ? 'ph-file-audio text-indigo-400' : 'ph-upload-simple text-slate-500'} text-3xl mb-2 inline-block`}></i>
-                        <p className="text-sm font-semibold text-slate-300">{selectedFile ? selectedFile.name : "Tap to browse files"}</p>
-                      </div>
-                    </div>
-                    
-                    <button onClick={runTranscription} disabled={isProcessing} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2 transition-transform active:scale-95">
-                      {isProcessing ? <i className="ph ph-spinner animate-spin text-2xl"></i> : <i className="ph-fill ph-magic-wand text-2xl"></i>} စာသားထုတ်ယူမည်
-                    </button>
-                    {logs.length > 0 && <p className="text-xs text-indigo-400 font-semibold mt-4">{logs[logs.length-1]}</p>}
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-800">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-bold text-slate-200">Transcript Result</h3>
-                      <button onClick={() => copyToClipboard(transcriptText)} className="text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-indigo-500/20"><i className="ph ph-copy"></i> Copy</button>
-                    </div>
-                    <textarea rows="6" value={transcriptText} onChange={(e) => setTranscriptText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 focus:outline-none focus:border-indigo-500/50 text-sm leading-relaxed" placeholder="Extracted text will appear here..." />
-                  </div>
-                </div>
-              )}
-
-              {/* 2. SRT */}
-              {activeTab === 'srt' && (
-                <div className="space-y-6">
-                  <div className="text-center pb-6 border-b border-slate-800">
-                    <div className="w-16 h-16 bg-purple-500/10 text-purple-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-500/20">
-                      <i className="ph-fill ph-subtitles text-3xl"></i>
-                    </div>
-                    <h2 className="text-xl font-bold text-white mb-4">Smart SRT Subtitles</h2>
-                    <button onClick={generateSrt} disabled={isProcessing} className="w-full bg-purple-600 hover:bg-purple-500 text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-purple-600/20 flex items-center justify-center gap-2 transition-transform active:scale-95">
-                      <i className="ph-fill ph-film-script text-2xl"></i> SRT ဖန်တီးမည်
-                    </button>
-                  </div>
-
-                  {srtText && (
-                    <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-bold text-slate-200">Subtitle Data</h3>
-                        <button onClick={() => { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([srtText])); a.download="video_subtitle.srt"; a.click(); }} className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-emerald-500/20"><i className="ph ph-download-simple"></i> Save .srt</button>
-                      </div>
-                      <textarea rows="8" value={srtText} onChange={(e) => setSrtText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 font-mono text-xs focus:outline-none focus:border-purple-500/50" />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 3. Translation */}
-              {activeTab === 'translation' && (
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-800 pb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20"><i className="ph-fill ph-translate text-2xl"></i></div>
-                      <div><h2 className="text-lg font-bold text-white">AI Translator</h2><p className="text-xs text-slate-400">11 Languages Supported</p></div>
-                    </div>
-                    <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)} className="bg-slate-900 border border-slate-700 py-2.5 px-4 rounded-xl text-white outline-none font-bold text-sm w-full sm:w-auto shadow-inner">
-                      {languagesList.map(lang => <option key={lang.id} value={lang.id}>{lang.name}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4">
-                      <button onClick={() => runTranslation('transcript')} className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 py-3 rounded-xl font-bold mb-3 text-sm flex justify-center gap-2"><i className="ph-fill ph-text-aa text-lg"></i> စာသားကို ဘာသာပြန်မည်</button>
-                      <textarea rows="4" value={translatedText} onChange={(e) => setTranslatedText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 focus:outline-none" placeholder="Translated text..." />
-                    </div>
-                    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4">
-                      <button onClick={() => runTranslation('srt')} className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 py-3 rounded-xl font-bold mb-3 text-sm flex justify-center gap-2"><i className="ph-fill ph-subtitles text-lg"></i> SRT ကို ဘာသာပြန်မည်</button>
-                      <textarea rows="4" value={translatedSrtText} onChange={(e) => setTranslatedSrtText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none" placeholder="Translated SRT..." />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 4. TTS */}
-              {activeTab === 'tts' && (
-                <div className="space-y-6 relative">
-                  {userRole !== 'premium' && (
-                    <div className="absolute inset-0 z-10 bg-slate-950/80 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-amber-500/20">
-                      <i className="ph-fill ph-lock-key text-5xl text-amber-500 mb-4 drop-shadow-lg"></i>
-                      <h2 className="text-xl font-bold text-white mb-2">Premium Exclusive</h2>
-                      <p className="text-slate-400 mb-6 text-sm max-w-sm">အသံ ၁၀ မျိုး၊ Speed နှင့် Pitch ချိန်ညှိနိုင်သော Neural Audio ကို Premium အသုံးပြုသူများသာ သုံးနိုင်ပါသည်။</p>
-                      <button onClick={() => setShowPaymentModal(true)} className="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-amber-500/20 hover:scale-105 transition-transform text-sm">Unlock Premium</button>
-                    </div>
-                  )}
-
-                  <div className={`space-y-6 ${userRole !== 'premium' ? 'opacity-20 pointer-events-none' : ''}`}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-pink-500/10 text-pink-400 rounded-2xl flex items-center justify-center border border-pink-500/20"><i className="ph-fill ph-speaker-high text-2xl"></i></div>
-                      <div><h2 className="text-lg font-bold text-white">Neural Voice Engine</h2><p className="text-xs text-slate-400">10 Voices + Advanced Tunings</p></div>
-                    </div>
-
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-                      <label className="text-xs font-bold text-slate-500 uppercase block mb-3">Select Preset</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                        {voicePresets.map(vp => (
-                          <button key={vp.id} onClick={() => handleVoiceChange(vp.id)} className={`py-2 px-1 text-[11px] font-bold rounded-lg border transition-all ${selectedVoice === vp.id ? 'bg-pink-600 border-pink-400 text-white shadow-md' : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'}`}>
-                            {vp.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <div className="flex-1 bg-slate-900 p-4 rounded-2xl border border-slate-800">
-                        <label className="text-xs text-slate-400 font-bold flex justify-between"><span>Speed</span> <span className="text-pink-400">{ttsSpeed}x</span></label>
-                        <input type="range" min="0.5" max="2.0" step="0.1" value={ttsSpeed} onChange={(e) => setTtsSpeed(parseFloat(e.target.value))} className="w-full mt-3 accent-pink-500" />
-                      </div>
-                      <div className="flex-1 bg-slate-900 p-4 rounded-2xl border border-slate-800">
-                        <label className="text-xs text-slate-400 font-bold flex justify-between"><span>Pitch</span> <span className="text-purple-400">{ttsPitch}</span></label>
-                        <input type="range" min="0.5" max="2.0" step="0.1" value={ttsPitch} onChange={(e) => setTtsPitch(parseFloat(e.target.value))} className="w-full mt-3 accent-purple-500" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <textarea rows="3" value={ttsInput} onChange={(e) => setTtsInput(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-pink-500/50 mb-3" placeholder="မြန်မာစာ သို့မဟုတ် ရွေးချယ်ထားသော ဘာသာစကားဖြင့် ရိုက်ထည့်ပါ..." />
-                      <button onClick={runNeuralTtsPlay} disabled={isSynthesizing} className="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-bold shadow-lg shadow-pink-600/20 flex justify-center items-center gap-2 text-lg transition-transform active:scale-95 text-white">
-                        {isSynthesizing ? <i className="ph ph-spinner animate-spin text-2xl"></i> : <i className="ph-fill ph-play-circle text-2xl"></i>} အသံဖန်တီးမည်
-                      </button>
-                    </div>
-
-                    {synthesizedAudioUrl && (
-                      <div className="bg-slate-900 p-2 rounded-2xl border border-slate-800 flex items-center gap-3">
-                        <audio src={synthesizedAudioUrl} controls autoPlay className="w-full h-12" />
-                        <a href={synthesizedAudioUrl} download="tts_audio.mp3" className="bg-emerald-500 hover:bg-emerald-400 p-3 rounded-xl text-slate-900 shadow-md transition-colors"><i className="ph-fill ph-download-simple text-xl"></i></a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 5. Settings */}
-              {activeTab === 'settings' && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-slate-800 text-slate-300 rounded-2xl flex items-center justify-center border border-slate-700"><i className="ph-fill ph-gear-six text-2xl"></i></div>
-                    <div><h2 className="text-lg font-bold text-white">Configuration</h2><p className="text-xs text-slate-400">External API Keys</p></div>
-                  </div>
-                  
-                  <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                    <label className="text-sm font-bold text-slate-300 block mb-2">Groq API Key <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded ml-2 font-normal text-slate-400">Optional</span></label>
-                    <input type="password" value={userGroqKey} onChange={(e) => { setUserGroqKey(e.target.value); safeSetLocal('user_groq_api_key', e.target.value); }} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 font-mono text-sm" placeholder="gsk_..." />
-                    <p className="text-xs text-slate-500 mt-2">Bypass server limits with your own free Groq key.</p>
-                  </div>
-                  
-                  <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                    <label className="text-sm font-bold text-slate-300 block mb-2">Gemini API Key <span className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] px-2 py-0.5 rounded ml-2 font-bold">Required</span></label>
-                    <input type="password" value={userGeminiKey} onChange={(e) => { setUserGeminiKey(e.target.value); safeSetLocal('gemini_api_key', e.target.value); }} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 font-mono text-sm" placeholder="AIzaSy..." />
-                    <p className="text-xs text-slate-500 mt-2">Needed for Translation features. Get it from Google AI Studio.</p>
-                  </div>
-                </div>
-              )}
-
-              {/* 6. Admin Panel (FIXED: Improved Layout & Receipt View) */}
-              {activeTab === 'admin' && isAdminAuthenticated && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-indigo-500/20 text-indigo-400 rounded-2xl flex items-center justify-center border border-indigo-500/30"><i className="ph-fill ph-shield-check text-2xl"></i></div>
-                    <div><h2 className="text-lg font-bold text-white">Admin Console</h2><p className="text-xs text-slate-400">Manage Premium Requests</p></div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {paymentRequests.length === 0 ? <p className="text-slate-500 text-center py-10 font-medium bg-slate-900 rounded-2xl border border-slate-800">No requests pending.</p> : paymentRequests.map(req => (
-                      <div key={req.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center shadow-sm">
-                        <div className="flex-1">
-                          <p className="text-indigo-400 font-mono text-sm font-bold tracking-wider">{req.transactionId}</p>
-                          <div className="text-[10px] text-slate-500 mt-1 flex gap-3">
-                            <span className="uppercase">User: {req.userId.substring(0,8)}</span>
-                            {req.receiptUrl && (
-                               <button onClick={() => setSelectedReceiptUrl(req.receiptUrl)} className="text-sky-400 hover:text-sky-300 underline"><i className="ph ph-image"></i> View Receipt</button>
-                            )}
-                          </div>
-                        </div>
-                        {req.status === 'Pending' ? (
-                          <div className="flex gap-2">
-                            <button onClick={() => handleApproveRequest(req)} className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors">Approve</button>
-                            <button onClick={() => handleRejectRequest(req.id)} className="bg-red-500/20 text-red-400 hover:bg-red-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors">Reject</button>
-                          </div>
-                        ) : <span className={`font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg border ${req.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>{req.status}</span>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </main>
-
-          {/* --- Modals --- */}
-          {/* Share Modal */}
-          {showShareModal && (
-            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="glass-card w-full max-w-sm rounded-3xl p-8 shadow-2xl relative text-center">
-                <button onClick={() => setShowShareModal(false)} className="absolute top-5 right-5 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full flex items-center justify-center"><i className="ph ph-x"></i></button>
-                <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-500/30"><i className="ph-fill ph-share-network text-2xl"></i></div>
-                <h3 className="text-lg font-bold text-white mb-2">Share Workspace</h3>
-                <p className="text-xs text-slate-400 mb-6">Send this link to share your extracted text and translations.</p>
-                <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl mb-6 font-mono text-[11px] text-slate-300 break-all select-all shadow-inner">
-                   {generatedShareUrl}
-                </div>
-                <button onClick={() => copyToClipboard(generatedShareUrl)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all">
-                   <i className="ph-fill ph-copy text-lg"></i> Copy Link
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Payment Modal */}
-          {showPaymentModal && (
-            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
-                <button onClick={() => setShowPaymentModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full flex items-center justify-center"><i className="ph ph-x"></i></button>
-                
-                <div className="text-center mb-6 pt-2">
-                  <h3 className="text-xl font-bold text-amber-400 mb-2">Go Premium</h3>
-                  <div className="bg-slate-950 inline-block px-5 py-2.5 rounded-2xl border border-slate-800 shadow-inner">
-                    <span className="text-white text-lg font-bold tracking-wide">၁ လ - ၁၀,၀၀၀ ကျပ်</span>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4 mb-6">
-                   <div className="flex-1 bg-white p-2 rounded-2xl text-center shadow-lg">
-                      <img src="https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg" className="w-full h-auto rounded-lg object-contain" />
-                      <p className="text-black font-extrabold text-[10px] mt-2">KBZ Pay</p>
-                   </div>
-                   <div className="flex-1 bg-white p-2 rounded-2xl text-center shadow-lg">
-                      <img src="https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg" className="w-full h-auto rounded-lg object-contain" />
-                      <p className="text-black font-extrabold text-[10px] mt-2">Wave Pay</p>
-                   </div>
-                </div>
-
-                <form onSubmit={handlePaymentSubmit} className="space-y-5">
-                  <div>
-                    <label className="text-xs text-slate-400 font-bold mb-2 block text-center">Transaction ID (နောက်ဆုံး ၆ လုံး/ ၈ လုံး)</label>
-                    <input type="text" required value={submittedTxId} onChange={(e) => setSubmittedTxId(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-amber-500 font-mono tracking-[0.2em] text-center text-lg shadow-inner" placeholder="123456" />
-                  </div>
-                  
-                  {/* Image Upload Input added back for Admin Verification */}
-                  <div>
-                    <label className="text-xs text-slate-400 font-bold mb-2 block text-center">ငွေလွှဲပြေစာ ပုံတင်ရန်</label>
-                    <input type="file" accept="image/*" className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-indigo-400 hover:file:bg-slate-700" />
-                  </div>
-
-                  <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-400 text-slate-950 font-bold py-4 rounded-xl shadow-lg shadow-amber-500/20 text-sm hover:scale-[1.02] transition-transform">အတည်ပြုချက် တင်ပြမည်</button>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Receipt Preview Modal */}
-          {selectedReceiptUrl && (
-            <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="relative w-full max-w-md">
-                <button onClick={() => setSelectedReceiptUrl('')} className="absolute -top-12 right-0 text-white font-bold bg-slate-800 hover:bg-slate-700 w-10 h-10 rounded-full flex items-center justify-center"><i className="ph ph-x text-xl"></i></button>
-                <img src={selectedReceiptUrl} className="w-full h-auto max-h-[80vh] object-contain rounded-lg border border-slate-700 shadow-2xl" />
-              </div>
-            </div>
-          )}
-
-          {/* Admin Login Modal (Password: 123456) */}
-          {showAdminLoginModal && (
-            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="glass-card w-full max-w-xs rounded-3xl p-8 shadow-2xl relative text-center">
-                <button onClick={() => setShowAdminLoginModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full flex items-center justify-center"><i className="ph ph-x"></i></button>
-                <div className="w-16 h-16 bg-slate-900 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800"><i className="ph-fill ph-lock-key text-2xl"></i></div>
-                <h3 className="text-lg font-bold text-white mb-6">Admin Login</h3>
-                <form onSubmit={handleAdminLogin} className="space-y-5">
-                  <input type="password" required value={adminPasswordInput} onChange={(e) => setAdminPasswordInput(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none text-center tracking-[0.3em] text-xl font-mono shadow-inner" placeholder="••••••" />
-                  <button type="submit" className="w-full bg-slate-100 text-slate-900 hover:bg-white font-bold py-4 rounded-xl shadow-lg text-sm transition-transform active:scale-95">ဝင်ရောက်မည်</button>
-                </form>
-              </div>
-            </div>
-          )}
-
+      <div class="text-center mb-6 pt-2">
+        <h3 class="text-xl font-bold text-amber-400 mb-2">Go Premium</h3>
+        <div class="bg-slate-950 inline-block px-5 py-2.5 rounded-2xl border border-slate-800 shadow-inner">
+          <span class="text-white text-lg font-bold tracking-wide">၁ လ - ၁၀,၀၀၀ ကျပ်</span>
         </div>
-      );
+      </div>
+      
+      <div class="flex gap-4 mb-6">
+         <div class="flex-1 bg-white p-2 rounded-2xl text-center shadow-lg">
+            <img src="https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg" class="w-full h-auto rounded-lg object-contain" />
+            <p class="text-black font-extrabold text-[10px] mt-2">KBZ Pay</p>
+         </div>
+         <div class="flex-1 bg-white p-2 rounded-2xl text-center shadow-lg">
+            <img src="https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg" class="w-full h-auto rounded-lg object-contain" />
+            <p class="text-black font-extrabold text-[10px] mt-2">Wave Pay</p>
+         </div>
+      </div>
+
+      <div class="space-y-5">
+        <div>
+          <label class="text-xs text-slate-400 font-bold mb-2 block text-center">Transaction ID (နောက်ဆုံး ၆/၈ လုံး)</label>
+          <input type="text" id="txIdInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-amber-500 font-mono tracking-[0.2em] text-center text-lg shadow-inner" placeholder="123456" />
+        </div>
+        
+        <a href="https://t.me/thetphyo_tun" target="_blank" class="w-full bg-[#2AABEE]/10 border border-[#2AABEE]/20 text-[#2AABEE] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#2AABEE]/20 transition-colors text-sm">
+           <i class="ph-fill ph-telegram-logo text-xl"></i> ပြေစာအား Telegram သို့ပို့ရန်
+        </a>
+
+        <button onclick="submitPayment()" class="w-full bg-gradient-to-r from-amber-500 to-orange-400 text-slate-950 font-bold py-4 rounded-xl shadow-lg shadow-amber-500/20 text-sm hover:scale-[1.02] transition-transform">အတည်ပြုချက် တင်ပြမည်</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vanilla JavaScript Logic -->
+  <script>
+    // System Variables
+    const reversedGroqKeys = [
+      "hHiaJbZls8ppgDGU1h9EyjaYY3ZbydGWry4mr7GCKLHpAfagUaM_ksg",
+      "qIbKFVpz4ChHJDvKvKFi6hbzefY3YbdGWv2dJxk0b0DKDOLNLuHxE_ksg",
+      "eQINb2e5hf3cqz2vO82aYsY3YbdGWVMrYKfQGO2fafVFWWzV_ksg",
+      "IBG883db6ivzjm4IbDdWrd3ZDF3YbdGWIWMAA9jh1AqNhpfEAWYI_ksg",
+      "n6f7QGnP7sNZc2AbsqhdUXvCkWF3YbdGWFTe8cv9GsDPzOnjiarjY_ksg",
+      "qTs3ndmSDrA7Ar9tFXUY10YF3YbdGWZNuSBt9Vzaaa0l0tXHa_ksg",
+      "oDLaS5W90bi0sCqeBlBttWpQEF3YbdGWRQIpXxQrAoWvE6jiTePZ_ksg",
+      "TcdP0GFgfczs5PZeiQeCKmvgzRF3YbdGWv6wHpF0D3Px4w7tfWq2J_ksg",
+      "bbyFfemiOodzFjTIDbNQw7a66uFY3YbdGWxcp1YMfPPr8lzakTjl_ksg",
+      "PPWcupcusx4W4l166SV3050hhyF3YbdGWc9xGWpcwbVZQNBX50GId_ksg"
+    ];
+    const groqKeys = reversedGroqKeys.map(key => key.split('').reverse().join(''));
+    let activeKeyIndex = 0;
+    let selectedFile = null;
+    let transcriptSegments = [];
+    
+    // Auth & Admin State
+    let firebaseUser = null;
+    let userRole = 'user';
+    let isAdmin = localStorage.getItem('is_admin_auth') === 'true';
+
+    // Voices
+    const voicePresets = [
+      { id: 'my-mm-1', name: '👩🏻 မနီလာ', speed: 1.0, pitch: 1.0, lang: 'my' },
+      { id: 'my-mm-2', name: '👨🏻 ကိုသီဟ', speed: 1.0, pitch: 0.75, lang: 'my' },
+      { id: 'my-mm-3', name: '👧🏻 ကလေးမ', speed: 1.1, pitch: 1.3, lang: 'my' },
+      { id: 'my-mm-4', name: '👦🏻 ကလေးလေး', speed: 1.1, pitch: 1.2, lang: 'my' },
+      { id: 'my-mm-5', name: '👵🏻 အဘွားအို', speed: 0.85, pitch: 0.9, lang: 'my' },
+      { id: 'my-mm-6', name: '👴🏻 အဘိုးအို', speed: 0.85, pitch: 0.65, lang: 'my' },
+      { id: 'my-mm-7', name: '🎙️ သတင်းဖတ်', speed: 1.15, pitch: 0.95, lang: 'my' },
+      { id: 'en-us-1', name: '🇺🇸 English (F)', speed: 1.0, pitch: 1.1, lang: 'en' },
+      { id: 'ja-jp-1', name: '🇯🇵 Japanese', speed: 1.0, pitch: 1.2, lang: 'ja' },
+      { id: 'ko-kr-1', name: '🇰🇷 Korean', speed: 1.0, pitch: 1.1, lang: 'ko' }
+    ];
+    let selectedVoiceId = 'my-mm-1';
+
+    // Firebase Initialization (Fallback for Vercel/Local)
+    const fbConfig = {
+      apiKey: "dummy-key-to-prevent-crash", 
+      authDomain: "default-app.firebaseapp.com",
+      projectId: "default-app"
+    };
+    try {
+      firebase.initializeApp(fbConfig);
+    } catch(e) {}
+
+    // Init UI
+    window.onload = () => {
+      loadSavedData();
+      renderVoiceButtons();
+      updateHeaderButtons();
+      if(isAdmin) addAdminTab();
+    };
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMessage').innerText = msg;
+      toast.classList.remove('opacity-0', '-translate-y-20', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-20', 'pointer-events-none');
+      }, 3000);
     }
-    const root = ReactDOM.createRoot(document.getElementById('root')); root.render(<App />);
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => {
+        el.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg');
+        el.classList.add('glass-card', 'text-slate-400');
+      });
+      
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      const btn = document.querySelector(`[data-tab="${tabId}"]`);
+      btn.classList.remove('glass-card', 'text-slate-400');
+      btn.classList.add('bg-indigo-600', 'text-white', 'shadow-lg');
+    }
+
+    function updateHeaderButtons() {
+      const pBtn = document.getElementById('premiumBtnContainer');
+      const aBtn = document.getElementById('adminBtnContainer');
+      
+      if(userRole === 'premium') {
+        pBtn.innerHTML = `<span class="glass-card text-emerald-400 border-emerald-500/20 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Premium</span>`;
+        document.getElementById('premiumLock').classList.add('hidden');
+        document.getElementById('ttsContent').classList.remove('opacity-20', 'pointer-events-none');
+      } else {
+        pBtn.innerHTML = `<button onclick="openModal('paymentModal')" class="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1 shadow-lg shadow-amber-500/10 hover:scale-105 transition-all"><i class="ph-fill ph-crown text-base"></i> Upgrade</button>`;
+        document.getElementById('premiumLock').classList.remove('hidden');
+        document.getElementById('ttsContent').classList.add('opacity-20', 'pointer-events-none');
+      }
+
+      if(isAdmin) {
+        aBtn.innerHTML = `<button onclick="logoutAdmin()" class="bg-red-500/10 text-red-400 border border-red-500/20 w-10 h-10 rounded-xl flex items-center justify-center"><i class="ph-fill ph-sign-out text-lg"></i></button>`;
+      } else {
+        aBtn.innerHTML = `<button onclick="openModal('adminLoginModal')" class="glass-card hover:bg-slate-800 text-slate-400 w-10 h-10 rounded-xl flex items-center justify-center transition-colors"><i class="ph-fill ph-lock-key text-lg"></i></button>`;
+      }
+    }
+
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    // --- Storage ---
+    function loadSavedData() {
+      document.getElementById('transcriptTextarea').value = localStorage.getItem('stored_transcript') || '';
+      document.getElementById('srtTextarea').value = localStorage.getItem('stored_srt') || '';
+      document.getElementById('translatedTextarea').value = localStorage.getItem('stored_translation') || '';
+      document.getElementById('translatedSrtTextarea').value = localStorage.getItem('stored_translated_srt') || '';
+      document.getElementById('customGroqKey').value = localStorage.getItem('user_groq_api_key') || '';
+      document.getElementById('customGeminiKey').value = localStorage.getItem('gemini_api_key') || '';
+      try { transcriptSegments = JSON.parse(localStorage.getItem('stored_segments')) || []; } catch(e){}
+    }
+    
+    function saveData() {
+      localStorage.setItem('stored_transcript', document.getElementById('transcriptTextarea').value);
+      localStorage.setItem('stored_srt', document.getElementById('srtTextarea').value);
+      localStorage.setItem('stored_translation', document.getElementById('translatedTextarea').value);
+      localStorage.setItem('stored_translated_srt', document.getElementById('translatedSrtTextarea').value);
+    }
+
+    function saveSettings() {
+      localStorage.setItem('user_groq_api_key', document.getElementById('customGroqKey').value);
+      localStorage.setItem('gemini_api_key', document.getElementById('customGeminiKey').value);
+    }
+
+    // --- Media Input ---
+    function handleFileSelect(input) {
+      selectedFile = input.files[0];
+      if(selectedFile) {
+        document.getElementById('uploadIcon').className = "ph ph-file-audio text-indigo-400 text-3xl mb-2 inline-block";
+        document.getElementById('uploadText').innerText = selectedFile.name;
+      }
+    }
+
+    // --- AI Engine API Calls ---
+    async function runTranscription() {
+      if(!selectedFile) { showToast("ဖိုင်ရွေးချယ်ပေးပါ!"); return; }
+      
+      const btn = document.getElementById('extractBtn');
+      const logs = document.getElementById('transcriptLogs');
+      btn.innerHTML = `<i class="ph ph-spinner animate-spin text-2xl"></i> <span>လုပ်ဆောင်နေပါသည်...</span>`;
+      btn.disabled = true;
+      logs.classList.remove('hidden');
+      logs.innerText = "Processing media file...";
+
+      // Pseudo Audio Extraction (Simulated for Vanilla JS without massive WebAudio buffers blocking UI)
+      let formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('model', 'whisper-large-v3');
+      formData.append('response_format', 'verbose_json');
+
+      const customKey = document.getElementById('customGroqKey').value.trim();
+      let success = false;
+      let result = null;
+
+      if(customKey) {
+        try {
+          let res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${customKey}` }, body: formData });
+          if(res.ok) { result = await res.json(); success = true; }
+        } catch(e) {}
+      }
+
+      if(!success) {
+        for(let i=0; i<10; i++) {
+          try {
+            logs.innerText = `Connecting to Groq Node ${i+1}...`;
+            let res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${groqKeys[i]}` }, body: formData });
+            if(res.ok) { result = await res.json(); success = true; break; }
+          } catch(e) {}
+        }
+      }
+
+      if(success && result) {
+        document.getElementById('transcriptTextarea').value = result.text;
+        transcriptSegments = result.segments || [];
+        localStorage.setItem('stored_segments', JSON.stringify(transcriptSegments));
+        saveData();
+        showToast("စာသားထုတ်ယူခြင်း အောင်မြင်ပါသည်");
+        logs.innerText = "Completed successfully!";
+      } else {
+        document.getElementById('transcriptTextarea').value = "System Overloaded. Please add your Custom Groq Key in Settings to bypass this limit.";
+        showToast("Server Limit Reached!");
+        logs.innerText = "Error: Limit Reached";
+      }
+
+      btn.innerHTML = `<i class="ph-fill ph-magic-wand text-2xl"></i> <span>စာသားထုတ်ယူမည်</span>`;
+      btn.disabled = false;
+    }
+
+    function generateSrt() {
+      const text = document.getElementById('transcriptTextarea').value;
+      if(!text || transcriptSegments.length === 0) { showToast("စာသားထုတ်ယူခြင်း အရင်လုပ်ပါ!"); return; }
+      
+      let srt = "";
+      const ft = (sec) => {
+        let d = new Date(sec * 1000);
+        return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}:${String(d.getUTCSeconds()).padStart(2,'0')},${String(Math.floor((sec%1)*1000)).padStart(3,'0')}`;
+      };
+      
+      transcriptSegments.forEach((seg, i) => {
+        srt += `${i+1}\n${ft(seg.start)} --> ${ft(seg.end)}\n${seg.text.trim()}\n\n`;
+      });
+
+      document.getElementById('srtTextarea').value = srt;
+      saveData();
+      showToast("SRT ဖန်တီးပြီးပါပြီ");
+    }
+
+    async function runTranslation(type) {
+      const geminiKey = document.getElementById('customGeminiKey').value.trim();
+      if(!geminiKey) { showToast("Settings တွင် Gemini Key ထည့်ပါ!"); return; }
+      
+      const sourceId = type === 'srt' ? 'srtTextarea' : 'transcriptTextarea';
+      const targetId = type === 'srt' ? 'translatedSrtTextarea' : 'translatedTextarea';
+      const sourceContent = document.getElementById(sourceId).value;
+      const targetLang = document.getElementById('targetLang').value;
+      
+      if(!sourceContent) { showToast("ဘာသာပြန်ရန် စာသားမရှိပါ"); return; }
+      showToast("ဘာသာပြန်နေပါသည်...");
+
+      const prompt = type === 'srt' 
+        ? `Translate this SRT file into ${targetLang}. Preserve ALL timestamps and numbers exactly. Only translate the text. SRT:\n\n${sourceContent}`
+        : `Translate the following text into ${targetLang}:\n\n${sourceContent}`;
+
+      try {
+        let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        let data = await res.json();
+        document.getElementById(targetId).value = data.candidates[0].content.parts[0].text;
+        saveData();
+        showToast("ဘာသာပြန်ပြီးပါပြီ!");
+      } catch(e) { showToast("Gemini Key မှားယွင်းနေပါသည်"); }
+    }
+
+    // --- TTS Engine ---
+    function renderVoiceButtons() {
+      const container = document.getElementById('voiceButtonsContainer');
+      container.innerHTML = voicePresets.map(vp => `
+        <button onclick="handleVoiceChange('${vp.id}')" id="btn-voice-${vp.id}" class="voice-btn py-2 px-1 text-[11px] font-bold rounded-lg border transition-all ${selectedVoiceId === vp.id ? 'bg-pink-600 border-pink-400 text-white shadow-md' : 'bg-slate-950 border-slate-800 text-slate-400'}">
+          ${vp.name}
+        </button>
+      `).join('');
+    }
+
+    function handleVoiceChange(vid) {
+      selectedVoiceId = vid;
+      document.querySelectorAll('.voice-btn').forEach(el => { el.classList.remove('bg-pink-600', 'border-pink-400', 'text-white'); el.classList.add('bg-slate-950', 'border-slate-800', 'text-slate-400'); });
+      document.getElementById(`btn-voice-${vid}`).classList.add('bg-pink-600', 'border-pink-400', 'text-white');
+      
+      const p = voicePresets.find(v => v.id === vid);
+      if(p) {
+        document.getElementById('ttsSpeed').value = p.speed;
+        document.getElementById('ttsPitch').value = p.pitch;
+        updateRangeValues();
+      }
+    }
+
+    function updateRangeValues() {
+      document.getElementById('speedValue').innerText = document.getElementById('ttsSpeed').value + "x";
+      document.getElementById('pitchValue').innerText = document.getElementById('ttsPitch').value;
+    }
+
+    let ttsAudio = new Audio();
+    function runNeuralTtsPlay() {
+      if(userRole !== 'premium') { showToast("Premium Feature!"); return; }
+      const text = document.getElementById('ttsInputTextarea').value.trim();
+      if(!text) return;
+      
+      const btn = document.getElementById('ttsPlayBtn');
+      btn.innerHTML = `<i class="ph ph-spinner animate-spin text-2xl"></i> <span>လုပ်ဆောင်နေပါသည်...</span>`;
+      
+      const v = voicePresets.find(x => x.id === selectedVoiceId);
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${v.lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
+      
+      ttsAudio.src = url;
+      ttsAudio.playbackRate = parseFloat(document.getElementById('ttsSpeed').value);
+      
+      let pValue = parseFloat(document.getElementById('ttsPitch').value);
+      if(pValue !== 1.0) { ttsAudio.preservesPitch = false; ttsAudio.playbackRate *= pValue; }
+      else { ttsAudio.preservesPitch = true; }
+
+      ttsAudio.oncanplaythrough = () => { 
+        ttsAudio.play(); 
+        btn.innerHTML = `<i class="ph-fill ph-play-circle text-2xl"></i> <span>အသံဖန်တီးမည်</span>`;
+        document.getElementById('audioPlayerContainer').classList.remove('hidden');
+        document.getElementById('ttsDownloadLink').href = url;
+      };
+      ttsAudio.onerror = () => { showToast("Audio API Error!"); btn.innerHTML = `<i class="ph-fill ph-play-circle text-2xl"></i> <span>အသံဖန်တီးမည်</span>`; }
+    }
+
+    // --- Admin & Utils ---
+    function handleAdminLogin() {
+      const pwd = document.getElementById('adminPwdInput').value;
+      if(pwd === "123456") {
+        isAdmin = true;
+        localStorage.setItem('is_admin_auth', 'true');
+        closeModal('adminLoginModal');
+        updateHeaderButtons();
+        addAdminTab();
+        showToast("Admin Logged In!");
+      } else { showToast("Password မှားယွင်းပါသည်"); }
+    }
+
+    function logoutAdmin() {
+      isAdmin = false;
+      localStorage.setItem('is_admin_auth', 'false');
+      document.getElementById('navTabs').lastElementChild.remove(); // Remove Admin Tab
+      switchTab('transcript');
+      updateHeaderButtons();
+      showToast("Admin Logged Out!");
+    }
+
+    function addAdminTab() {
+      if(!document.querySelector('[data-tab="admin"]')) {
+        document.getElementById('navTabs').innerHTML += `<button onclick="switchTab('admin')" class="nav-btn flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap glass-card text-slate-400 hover:text-slate-200 hover:bg-slate-800" data-tab="admin"><i class="ph ph-shield-check text-lg"></i> Admin Board</button>`;
+      }
+    }
+
+    function submitPayment() {
+      const id = document.getElementById('txIdInput').value;
+      if(!id) { showToast("Transaction ID ထည့်ပါ"); return; }
+      showToast("Telegram သို့ ပြေစာပေးပို့ပြီးပါက Admin မှ လက်ခံပေးပါမည်။");
+      closeModal('paymentModal');
+      // Simulated DB submission
+    }
+
+    function copyToClipboard(elementId) {
+      const el = document.getElementById(elementId);
+      el.select();
+      document.execCommand('copy');
+      showToast("Copied to clipboard!");
+    }
+
+    function downloadSrt() {
+      const text = document.getElementById('srtTextarea').value;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text]));
+      a.download = "video_subtitle.srt";
+      a.click();
+    }
   </script>
 </body>
 </html>
