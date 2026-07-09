@@ -6,14 +6,10 @@
   <title>DeepLearn AI Workspace</title>
   
   <script>
-    window.onerror = function(message, source, lineno, colno, error) {
-      console.error(message);
-      return true;
-    };
+    window.onerror = function(message) { console.error(message); return true; };
   </script>
 
   <script src="https://cdn.tailwindcss.com"></script>
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -45,15 +41,6 @@
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
-
-    class ErrorBoundary extends React.Component {
-      constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-      static getDerivedStateFromError(error) { return { hasError: true, error }; }
-      render() {
-        if (this.state.hasError) return <div className="p-8 text-center text-red-500">Render Error</div>;
-        return this.props.children; 
-      }
-    }
 
     const safeGetLocal = (key, defaultVal) => { try { return window.localStorage.getItem(key) || defaultVal; } catch(e) { return defaultVal; } };
     const safeSetLocal = (key, val) => { try { window.localStorage.setItem(key, val); } catch(e) {} };
@@ -87,12 +74,7 @@
         "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",
         "gsk_VzWWFVfaf2OGQFKrYVMWGdbY3Ysa28Ov2zqc3fh5e2NIQe",
         "gsk_IYWAEfpNhqA1hj9AAMWIWdby3FDFZ3drWdDbI4mjzv6bd388GBI",
-        "gsk_YjrainOzPDsG9vc8ETFWhdGdbY3WkCvxUHdqsb2ZNstPnGQ7f6n",
-        "gsk_aHXt0l0aaazV9tBSuNZWdby3FY01YUXFt9Ar7ArDSmdn3sTq",
-        "gsk_ZPeTijE6vWoArQxXpIQRdby3FEQpWttBlBeQCs0ib905SaLDo",
-        "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",
-        "gsk_ljTkazl8rPPfMY1pcxWGdby3Yuf66wQbDITjFzdOoimeFfyb",
-        "gsk_dIG05XBNQZvbwcpWGx9cGWdby3yhh0503VS66l1W4xsucpuWPP"
+        "gsk_YjrainOzPDsG9vc8ETFWhdGdbY3WkCvxUHdqsb2ZNstPnGQ7f6n"
       ];
 
       const [firebaseUser, setFirebaseUser] = useState(null);
@@ -100,10 +82,11 @@
       const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => safeGetSession('is_admin_auth', 'false') === 'true');
       const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
       const [adminPasswordInput, setAdminPasswordInput] = useState('');
-      const ADMIN_SECRET_KEY = "111"; 
       
       const [userGeminiKey, setUserGeminiKey] = useState(() => safeGetLocal('gemini_api_key', ''));
       const [userGroqKey, setUserGroqKey] = useState(() => safeGetLocal('user_groq_api_key', ''));
+      const [groqStatus, setGroqStatus] = useState(null);
+      const [geminiStatus, setGeminiStatus] = useState(null);
       
       const [showPaymentModal, setShowPaymentModal] = useState(false);
       const [submittedTxId, setSubmittedTxId] = useState('');
@@ -142,20 +125,20 @@
         setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
       };
 
+      // --- Auth & Database Listener ---
       useEffect(() => {
         if (!auth) return;
         auth.signInAnonymously().catch(e => console.error("Auth error:", e));
-
+        
         const unsub = auth.onAuthStateChanged(user => {
           if (user) {
             setFirebaseUser(user);
-            db.collection("users").doc(user.uid).onSnapshot(doc => {
-              if (doc.exists) {
-                setUserRole(doc.data().role || 'user');
-              } else {
-                db.collection("users").doc(user.uid).set({ role: 'user', createdAt: new Date().toISOString() }).catch(err => console.error("Create user error:", err));
-              }
-            });
+            if(db) {
+              db.collection("users").doc(user.uid).onSnapshot(doc => {
+                if (doc.exists) { setUserRole(doc.data().role || 'user'); } 
+                else { db.collection("users").doc(user.uid).set({ role: 'user', createdAt: new Date().toISOString() }); }
+              });
+            }
           }
         });
         return () => unsub();
@@ -166,8 +149,9 @@
         const unsub = db.collection("payments").onSnapshot(snapshot => {
           const list = [];
           snapshot.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          list.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
           setPaymentRequests(list);
-        }, err => console.error("Fetch payments error:", err));
+        });
         return () => unsub();
       }, [firebaseUser]);
 
@@ -179,14 +163,39 @@
         safeSetLocal('stored_translated_srt', translatedSrtText);
       }, [transcriptText, transcriptSegments, srtText, translatedText, translatedSrtText]);
 
+      // --- API Key Checkers ---
+      const testGroqKey = async () => {
+        if(!userGroqKey) { showToast("Key အရင်ထည့်ပါ", "warning"); return; }
+        setLogs(["Groq API Key ကို စစ်ဆေးနေပါသည်..."]);
+        try {
+          const res = await fetch('https://api.groq.com/openai/v1/models', { headers: { 'Authorization': `Bearer ${userGroqKey}` } });
+          if (res.ok) { setGroqStatus('success'); showToast("✅ Groq Key မှန်ကန်ပါသည်။", "success"); setLogs(["✅ Groq Key အလုပ်လုပ်ပါသည်။"]); } 
+          else { setGroqStatus('error'); showToast("❌ Groq Key မှားယွင်းနေပါသည်။", "error"); setLogs(["❌ Groq Key မှားယွင်းနေပါသည်။"]); }
+        } catch(e) { setGroqStatus('error'); showToast("Connection Error", "error"); }
+      };
+
+      const testGeminiKey = async () => {
+        if(!userGeminiKey) { showToast("Key အရင်ထည့်ပါ", "warning"); return; }
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
+          });
+          if (res.ok) { setGeminiStatus('success'); showToast("✅ Gemini Key မှန်ကန်ပါသည်။", "success"); } 
+          else { setGeminiStatus('error'); showToast("❌ Gemini Key မှားယွင်းနေပါသည်။", "error"); }
+        } catch(e) { setGeminiStatus('error'); showToast("Connection Error", "error"); }
+      };
+
+      // --- Audio Extraction Logic (Client Side) ---
       const processAndExtractAudio = async (videoFile) => {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = async (e) => {
             try {
-              setLogs(["အသံလှိုင်းများကို ပြင်ဆင်နေပါသည်... ⏳"]);
+              setLogs(["အသံလှိုင်းများကို ပြင်ဆင်နေပါသည် (ဖိုင်ကြီးပါက အနည်းငယ် ကြာနိုင်ပါသည်)... ⏳"]);
               const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
               const decodedBuffer = await audioCtx.decodeAudioData(e.target.result);
+              
+              // Downsample to 16kHz for Whisper to save size massively
               const offlineCtx = new OfflineAudioContext(1, 16000 * decodedBuffer.duration, 16000);
               const bufferSource = offlineCtx.createBufferSource();
               bufferSource.buffer = decodedBuffer;
@@ -194,20 +203,9 @@
               bufferSource.start();
               const renderedBuffer = await offlineCtx.startRendering();
               
-              const buffer = renderedBuffer.getChannelData(0);
-              const sampleRate = renderedBuffer.sampleRate;
-              const length = buffer.length * 2 + 44;
-              const bufferArray = new ArrayBuffer(length);
-              const view = new DataView(bufferArray);
-              const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
-              writeStr(0, 'RIFF'); view.setUint32(4, length - 8, true); writeStr(8, 'WAVE'); writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); writeStr(36, 'data'); view.setUint32(40, length - 44, true);
-              let offset = 44;
-              for (let i = 0; i < buffer.length; i++, offset += 2) {
-                const s = Math.max(-1, Math.min(1, buffer[i]));
-                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-              }
-              setLogs([`အသံဖိုင် ပြင်ဆင်ပြီးပါပြီ။ 🚀`]);
-              resolve(new File([new Blob([view], { type: 'audio/wav' })], "audio.wav", { type: "audio/wav" }));
+              const wavBlob = encodeWAV(renderedBuffer);
+              setLogs([`အသံဖိုင် သီးသန့်ခွဲထုတ်ခြင်း ပြီးမြောက်ပါပြီ။ 🚀`]);
+              resolve(new File([wavBlob], "extracted_audio.wav", { type: "audio/wav" }));
             } catch (err) { reject(err); }
           };
           reader.onerror = () => reject(new Error("File reading failed"));
@@ -215,31 +213,70 @@
         });
       };
 
+      const encodeWAV = (audioBuffer) => {
+        const buffer = audioBuffer.getChannelData(0);
+        const sampleRate = audioBuffer.sampleRate;
+        const length = buffer.length * 2 + 44;
+        const bufferArray = new ArrayBuffer(length);
+        const view = new DataView(bufferArray);
+        const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+        
+        writeStr(0, 'RIFF'); view.setUint32(4, length - 8, true); writeStr(8, 'WAVE'); 
+        writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); 
+        view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true); 
+        view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); 
+        view.setUint16(34, 16, true); writeStr(36, 'data'); view.setUint32(40, length - 44, true);
+        
+        let offset = 44;
+        for (let i = 0; i < buffer.length; i++, offset += 2) {
+          const s = Math.max(-1, Math.min(1, buffer[i]));
+          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+        return new Blob([view], { type: 'audio/wav' });
+      };
+
+      // --- Transcription ---
       const runTranscription = async () => {
         if (!selectedFile) { showToast("ဖိုင်ရွေးချယ်ပေးပါ!", "error"); return; }
-        setIsProcessing(true); setLogs(["AI စတင် အလုပ်လုပ်နေပါပြီ..."]);
+        if (userGroqKey && groqStatus === 'error') { showToast("Groq API Key မှားယွင်းနေပါသည်။", "error"); return; }
+
+        setIsProcessing(true); 
+        setLogs(["AI စတင် အလုပ်လုပ်နေပါပြီ..."]);
         
         let audioFileToSend = selectedFile;
-        if (selectedFile.type.startsWith('video/') || selectedFile.name.match(/\.(mp4|mkv|mov)$/i)) {
-          try { audioFileToSend = await processAndExtractAudio(selectedFile); } 
-          catch (err) { setLogs(["ဗီဒီယိုမှ အသံထုတ်ယူခြင်း မအောင်မြင်ပါ။"]); setIsProcessing(false); return; }
+        
+        // If it's a video file, extract audio first to reduce upload size
+        if (selectedFile.type.startsWith('video/') || selectedFile.name.match(/\.(mp4|mkv|mov|avi)$/i)) {
+          try { 
+            audioFileToSend = await processAndExtractAudio(selectedFile); 
+          } catch (err) { 
+            setLogs(["ဗီဒီယိုမှ အသံထုတ်ယူခြင်း မအောင်မြင်ပါ။ ဖုန်း Memory မလုံလောက်ခြင်း ဖြစ်နိုင်ပါသည်။"]); 
+            setIsProcessing(false); 
+            return; 
+          }
         }
 
         let success = false, resultText = "", resultSegments = [];
+        const formData = new FormData(); 
+        formData.append('file', audioFileToSend); 
+        formData.append('model', 'whisper-large-v3'); 
+        formData.append('response_format', 'verbose_json');
         
-        if (userGroqKey) {
+        // 1. Try User Key
+        if (userGroqKey && groqStatus !== 'error') {
           try {
-            const formData = new FormData(); formData.append('file', audioFileToSend); formData.append('model', 'whisper-large-v3'); formData.append('response_format', 'verbose_json');
+            setLogs(["ကိုယ်ပိုင် Key ဖြင့် AI သို့ ဖိုင်ပေးပို့နေပါသည်..."]);
             const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${userGroqKey}` }, body: formData });
             if (res.ok) { const data = await res.json(); resultText = data.text; resultSegments = data.segments || []; success = true; }
           } catch (err) {}
         }
         
+        // 2. Fallback to default keys
         if (!success) {
+          setLogs(["စနစ် Key ဖြင့် AI သို့ ဖိုင်ပေးပို့နေပါသည်..."]);
           let keyIndex = activeKeyIndex;
           for (let i = 0; i < initialGroqKeys.length; i++) {
             try {
-              const formData = new FormData(); formData.append('file', audioFileToSend); formData.append('model', 'whisper-large-v3'); formData.append('response_format', 'verbose_json');
               const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${initialGroqKeys[keyIndex]}` }, body: formData });
               if (res.ok) { const data = await res.json(); resultText = data.text; resultSegments = data.segments || []; success = true; setActiveKeyIndex(keyIndex); break; }
             } catch (err) { keyIndex = (keyIndex + 1) % initialGroqKeys.length; }
@@ -249,7 +286,7 @@
         if (success) {
           setTranscriptText(resultText); setTranscriptSegments(resultSegments); showToast("စာသားထုတ်ယူခြင်း အောင်မြင်ပါသည်။", "success"); setLogs(["✅ အောင်မြင်စွာ ပြီးမြောက်ပါပြီ။"]);
         } else {
-          showToast("API Error - ဖိုင်အရွယ်အစား ကြီးလွန်းနေနိုင်ပါသည်။", "error"); setLogs(["⚠️ ထုတ်ယူ၍ မရပါ။ ကိုယ်ပိုင် Key ကို သုံးကြည့်ပါ။"]);
+          showToast("API Error - ဖိုင်အရွယ်အစား ကြီးလွန်းနေနိုင်ပါသည်။", "error"); setLogs(["⚠️ ထုတ်ယူ၍ မရပါ။ ဖိုင်အရွယ်အစား လျှော့ချကြည့်ပါ။"]);
         }
         setIsProcessing(false);
       };
@@ -268,10 +305,12 @@
         }, 500);
       };
 
+      // --- Translation ---
       const runTranslation = async (type) => {
-        if (!userGeminiKey) { showToast("Settings တွင် Gemini API Key အရင်ထည့်ပါ။", "error"); return; }
+        if (!userGeminiKey) { showToast("Gemini API Key အရင်ထည့်ပါ။", "error"); return; }
+
         const sourceContent = type === 'srt' ? srtText : transcriptText;
-        if (!sourceContent) { showToast("ဘာသာပြန်ရန် စာသားမရှိပါ။", "error"); return; }
+        if (!sourceContent.trim()) { showToast("ဘာသာပြန်ရန် မူရင်းစာသား မရှိပါ။ စာသားအရင်ထည့်ပါ။", "error"); return; }
 
         setIsProcessing(true);
         const prompt = type === 'srt' ? `Translate this SRT file into ${targetLang}. Preserve all numbers and timestamps exactly. Only translate the text. SRT:\n\n${sourceContent}` : `Translate the following text into ${targetLang}:\n\n${sourceContent}`;
@@ -288,6 +327,7 @@
         setIsProcessing(false);
       };
 
+      // --- TTS ---
       const chunkBurmeseText = (text, maxLength) => {
         const chunks = [];
         let current = text;
@@ -324,59 +364,51 @@
             audioObj.preservesPitch = (ttsPitch === 0);
 
             audioObj.onended = () => { currentChunk++; playNextChunk(); };
-            audioObj.onerror = () => { setTtsErrorMsg(`အသံဖိုင် ဖွင့်၍မရပါ။ အပိုင်း (${currentChunk+1}) တွင် ရပ်တန့်သွားပါသည်။`); currentChunk++; playNextChunk(); };
-
+            audioObj.onerror = () => { setTtsErrorMsg(`အသံဖိုင် ဖွင့်၍မရပါ။`); currentChunk++; playNextChunk(); };
             audioObj.play().then(() => { if (chunks.length === 1) setSynthesizedAudioUrl(speechUrl); }).catch(err => {
-              setTtsErrorMsg("Browser မှ အသံကို တိုက်ရိုက်ဖွင့်ခွင့် ပိတ်ထားပါသည်။ Play ကို ကိုယ်တိုင် နှိပ်ပေးပါ။");
-              setIsSynthesizing(false);
+              setTtsErrorMsg("Browser အသံပိတ်ထားပါသည်။"); setIsSynthesizing(false);
             });
           };
           playNextChunk();
         } catch (err) { setTtsErrorMsg("⚠ Error: " + err.message); setIsSynthesizing(false); }
       };
 
-      // --- Admin & Payments (Fixed Write Actions) ---
+      // --- Admin Actions ---
       const handlePaymentSubmit = async (e) => {
         e.preventDefault();
-        if (!firebaseUser) { showToast("System Authentication မလုပ်ရသေးပါ။ ခဏစောင့်ပေးပါ။", "error"); return; }
-        if (!db) { showToast("Cloud သို့ ချိတ်ဆက်၍မရပါ။", "error"); return; }
+        if (!db || !firebaseUser) { showToast("စနစ်နှင့် ချိတ်ဆက်၍မရပါ။", "error"); return; }
         try {
           await db.collection("payments").doc(firebaseUser.uid).set({
             userId: firebaseUser.uid, transactionId: submittedTxId, status: "Pending", timestamp: new Date().toISOString()
           });
-          showToast("Admin ထံ တင်ပြပြီးပါပြီ။", "success"); setShowPaymentModal(false); setSubmittedTxId('');
-        } catch (err) {
-          console.error("Write error:", err);
-          showToast("တင်ပြမှု မအောင်မြင်ပါ။ Firebase Security Rules ကို စစ်ဆေးပါ။", "error");
-        }
+          showToast("အောင်မြင်စွာ တင်ပြပြီးပါပြီ။", "success"); setShowPaymentModal(false); setSubmittedTxId('');
+        } catch (err) { showToast("တင်ပြမှု မအောင်မြင်ပါ။", "error"); }
       };
 
       const handleApproveRequest = async (request) => {
         if (!db) return;
         try {
           await db.collection("users").doc(request.userId).update({ role: 'premium' });
-          await db.collection("payments").doc(request.id).update({ status: 'Approved' });
+          await db.collection("payments").doc(request.userId).update({ status: 'Approved' });
           showToast("Premium အတည်ပြုပြီးပါပြီ။", "success");
-        } catch (err) { console.error(err); showToast("အတည်ပြု၍ မရပါ။", "error"); }
+        } catch (err) { showToast("Error", "error"); }
       };
 
       const handleRejectRequest = async (id) => { 
         if (!db) return; 
-        try {
-          await db.collection("payments").doc(id).update({ status: 'Rejected' }); 
-        } catch (err) { console.error(err); showToast("ပယ်ချ၍ မရပါ။", "error"); }
+        try { await db.collection("payments").doc(id).update({ status: 'Rejected' }); } catch (err) { showToast("Error", "error"); }
       };
 
       const handleAdminLogin = (e) => {
         e.preventDefault();
-        if (adminPasswordInput === ADMIN_SECRET_KEY) {
+        if (adminPasswordInput === "111") {
           setIsAdminAuthenticated(true); safeSetSession('is_admin_auth', 'true'); setShowAdminLoginModal(false); setAdminPasswordInput(''); showToast("Admin ဝင်ရောက်ပြီးပါပြီ။", "success");
         } else { showToast("Password မှားယွင်းပါသည်။", "error"); }
       };
 
       const copyToClipboard = (text) => {
          try {
-           const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Copied to clipboard", "success");
+           const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast("Copied", "success");
          } catch(e) {}
       };
 
@@ -384,15 +416,14 @@
         { id: 'transcript', icon: 'fa-microphone', label: 'Extract Text' },
         { id: 'srt', icon: 'fa-closed-captioning', label: 'SRT Gen' },
         { id: 'translation', icon: 'fa-language', label: 'Translate' },
-        { id: 'tts', icon: 'fa-volume-high', label: 'အသံထွက် (TTS)' },
-        { id: 'settings', icon: 'fa-gear', label: 'Settings' }
+        { id: 'tts', icon: 'fa-volume-high', label: 'အသံထွက် (TTS)' }
       ];
       if (isAdminAuthenticated) tabs.push({ id: 'admin', icon: 'fa-shield-halved', label: 'Admin Board' });
 
       return (
         <div className="min-h-screen pb-20 md:pb-8 flex flex-col items-center pt-4 md:pt-10 px-4">
           {toast.show && (
-            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-lg bg-indigo-600 text-white font-semibold text-sm flex items-center gap-2 animate-[fadeIn_0.3s_ease-out]">
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-lg bg-indigo-600 text-white font-semibold text-sm flex items-center gap-2">
               <i className="fa-solid fa-circle-info"></i> {toast.message}
             </div>
           )}
@@ -436,169 +467,131 @@
             </div>
 
             <main className="glass-card rounded-3xl p-6 sm:p-8">
+              
+              {/* TRANSCRIPT TAB */}
               {activeTab === 'transcript' && (
                 <div className="space-y-6">
+                  {/* API Box (Inline for ease of use) */}
+                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                     <label className="text-xs font-bold text-slate-300 block mb-2">Groq API Key ထည့်ရန် (Optional)</label>
+                     <div className="flex gap-2">
+                        <input type="password" value={userGroqKey} onChange={(e) => {setUserGroqKey(e.target.value); safeSetLocal('user_groq_api_key', e.target.value);}} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-xs" placeholder="gsk_..." />
+                        <button onClick={testGroqKey} className="bg-indigo-600 hover:bg-indigo-500 px-3 rounded-lg text-xs font-bold whitespace-nowrap">စစ်ဆေးမည်</button>
+                     </div>
+                  </div>
+
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20">
-                      <i className="fa-solid fa-microphone text-3xl"></i>
-                    </div>
-                    <h2 className="text-xl font-bold text-white mb-2">Extract Text from Media</h2>
-                    <p className="text-sm text-slate-400 mb-6">Upload Video or Audio to generate transcripts using AI.</p>
-                    
                     <div className="relative mb-6">
                       <input type="file" accept="audio/*,video/*" onChange={(e) => setSelectedFile(e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                      <div className="border-2 border-dashed border-slate-700 bg-slate-900 rounded-2xl p-6 hover:border-indigo-500/50 transition-colors">
+                      <div className="border-2 border-dashed border-slate-700 bg-slate-900 rounded-2xl p-6 hover:border-indigo-500/50">
                         {selectedFile ? <i className="fa-solid fa-file-audio text-4xl text-indigo-400 mx-auto mb-3 block"></i> : <i className="fa-solid fa-cloud-arrow-up text-4xl text-slate-500 mx-auto mb-3 block"></i>}
                         <p className="text-sm font-semibold text-slate-300">{selectedFile ? selectedFile.name : "Tap to browse files"}</p>
                       </div>
                     </div>
-                    
-                    <button onClick={runTranscription} disabled={isProcessing} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-2xl font-bold text-lg shadow-xl flex items-center justify-center gap-2 active:scale-95">
+                    <button onClick={runTranscription} disabled={isProcessing} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2">
                       {isProcessing ? <i className="fa-solid fa-spinner fa-spin text-2xl"></i> : <i className="fa-solid fa-wand-magic-sparkles text-2xl"></i>} စာသားထုတ်ယူမည်
                     </button>
                     {logs.length > 0 && <p className="text-xs text-indigo-400 font-semibold mt-4">{logs[logs.length-1]}</p>}
                   </div>
 
                   <div className="pt-4 border-t border-slate-800">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-bold text-slate-200">Transcript Result</h3>
-                      <button onClick={() => copyToClipboard(transcriptText)} className="text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-indigo-500/20"><i className="fa-solid fa-copy"></i> Copy</button>
-                    </div>
-                    <textarea rows="6" value={transcriptText} onChange={(e) => setTranscriptText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 focus:outline-none focus:border-indigo-500/50 text-sm leading-relaxed" placeholder="Extracted text will appear here..." />
+                    <textarea rows="6" value={transcriptText} onChange={(e) => setTranscriptText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 text-sm" placeholder="Result will appear here..." />
                   </div>
                 </div>
               )}
 
+              {/* SRT TAB */}
               {activeTab === 'srt' && (
                 <div className="space-y-6">
                   <div className="text-center pb-6 border-b border-slate-800">
-                    <div className="w-16 h-16 bg-purple-500/10 text-purple-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-500/20"><i className="fa-solid fa-closed-captioning text-3xl"></i></div>
-                    <h2 className="text-xl font-bold text-white mb-4">Smart SRT Subtitles</h2>
-                    <button onClick={generateSrt} disabled={isProcessing} className="w-full bg-purple-600 hover:bg-purple-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 active:scale-95">
+                    <button onClick={generateSrt} disabled={isProcessing} className="w-full bg-purple-600 hover:bg-purple-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2">
                       <i className="fa-solid fa-file-video text-2xl"></i> SRT ဖန်တီးမည်
                     </button>
                   </div>
                   {srtText && (
                     <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-bold text-slate-200">Subtitle Data</h3>
-                        <button onClick={() => { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([srtText])); a.download="video_subtitle.srt"; a.click(); }} className="text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-500/20"><i className="fa-solid fa-download"></i> Save .srt</button>
-                      </div>
-                      <textarea rows="8" value={srtText} onChange={(e) => setSrtText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 font-mono text-xs focus:outline-none" />
+                      <textarea rows="8" value={srtText} onChange={(e) => setSrtText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 font-mono text-xs" />
                     </div>
                   )}
                 </div>
               )}
 
+              {/* TRANSLATION TAB */}
               {activeTab === 'translation' && (
                 <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-800 pb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20"><i className="fa-solid fa-language text-2xl"></i></div>
-                      <div><h2 className="text-lg font-bold text-white">AI Translator</h2><p className="text-xs text-slate-400">Settings မှ Gemini Key ထည့်ပါ</p></div>
-                    </div>
-                    <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)} className="bg-slate-900 border border-slate-700 py-2.5 px-4 rounded-xl text-white outline-none font-bold text-sm w-full sm:w-auto shadow-inner">
+                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                     <label className="text-xs font-bold text-slate-300 block mb-2">Gemini API Key ထည့်ရန် (Required)</label>
+                     <div className="flex gap-2">
+                        <input type="password" value={userGeminiKey} onChange={(e) => {setUserGeminiKey(e.target.value); safeSetLocal('gemini_api_key', e.target.value);}} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-xs" placeholder="AIzaSy..." />
+                        <button onClick={testGeminiKey} className="bg-blue-600 hover:bg-blue-500 px-3 rounded-lg text-xs font-bold whitespace-nowrap">စစ်ဆေးမည်</button>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white">AI Translator</h2>
+                    <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)} className="bg-slate-900 border border-slate-700 py-2 px-3 rounded-xl text-white text-sm">
                       {languagesList.map(lang => <option key={lang.id} value={lang.id}>{lang.name}</option>)}
                     </select>
                   </div>
+
                   <div className="space-y-4">
                     <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4">
-                      <button onClick={() => runTranslation('transcript')} disabled={isProcessing} className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 py-3 rounded-xl font-bold mb-3 text-sm flex items-center justify-center gap-2"><i className="fa-solid fa-font text-lg"></i> စာသားကို ဘာသာပြန်မည်</button>
-                      <textarea rows="4" value={translatedText} onChange={(e) => setTranslatedText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 focus:outline-none" placeholder="Translated text..." />
+                      <label className="text-xs font-bold text-slate-400 block mb-2">မူရင်းစာသား (Source Text)</label>
+                      <textarea rows="3" value={transcriptText} onChange={(e) => setTranscriptText(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 mb-2" placeholder="ဘာသာပြန်မည့် စာသားကို ဤနေရာတွင် ထည့်ပါ..." />
+                      
+                      <button onClick={() => runTranslation('transcript')} disabled={isProcessing} className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 py-3 rounded-xl font-bold mb-3 text-sm">စာသားကို ဘာသာပြန်မည်</button>
+                      
+                      <label className="text-xs font-bold text-emerald-400 block mb-2">ဘာသာပြန်ထားသောစာသား (Result)</label>
+                      <textarea rows="4" value={translatedText} onChange={(e) => setTranslatedText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-slate-300" placeholder="Translated text..." />
                     </div>
+
                     <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4">
-                      <button onClick={() => runTranslation('srt')} disabled={isProcessing} className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 py-3 rounded-xl font-bold mb-3 text-sm flex items-center justify-center gap-2"><i className="fa-solid fa-closed-captioning text-lg"></i> SRT ကို ဘာသာပြန်မည်</button>
-                      <textarea rows="4" value={translatedSrtText} onChange={(e) => setTranslatedSrtText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none" placeholder="Translated SRT..." />
+                      <label className="text-xs font-bold text-slate-400 block mb-2">မူရင်း SRT (Source SRT)</label>
+                      <textarea rows="3" value={srtText} onChange={(e) => setSrtText(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 mb-2" placeholder="ဘာသာပြန်မည့် SRT စာသားကို ဤနေရာတွင် ထည့်ပါ..." />
+
+                      <button onClick={() => runTranslation('srt')} disabled={isProcessing} className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 py-3 rounded-xl font-bold mb-3 text-sm">SRT ကို ဘာသာပြန်မည်</button>
+                      
+                      <label className="text-xs font-bold text-emerald-400 block mb-2">ဘာသာပြန်ထားသော SRT (Result)</label>
+                      <textarea rows="4" value={translatedSrtText} onChange={(e) => setTranslatedSrtText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300" placeholder="Translated SRT..." />
                     </div>
                   </div>
                 </div>
               )}
 
+              {/* TTS TAB */}
               {activeTab === 'tts' && (
                 <div className="space-y-6 relative">
                   {userRole !== 'premium' && (
-                    <div className="absolute inset-0 z-10 bg-slate-950/80 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-amber-500/20">
-                      <i className="fa-solid fa-lock text-5xl text-amber-500 mb-4 drop-shadow-lg"></i>
+                    <div className="absolute inset-0 z-10 bg-slate-950/80 rounded-2xl flex flex-col items-center justify-center p-6 text-center">
+                      <i className="fa-solid fa-lock text-5xl text-amber-500 mb-4"></i>
                       <h2 className="text-xl font-bold text-white mb-2">Premium Exclusive</h2>
-                      <p className="text-slate-400 mb-6 text-sm max-w-sm">အသံထွက်ထုတ်လုပ်ခြင်းကို Premium သုံးသူများသာ သုံးနိုင်ပါသည်။</p>
-                      <button onClick={() => setShowPaymentModal(true)} className="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 px-8 py-3.5 rounded-xl font-bold shadow-lg hover:scale-105 transition-transform text-sm">Unlock Premium</button>
+                      <button onClick={() => setShowPaymentModal(true)} className="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 px-8 py-3 rounded-xl font-bold mt-4">Unlock Premium</button>
                     </div>
                   )}
                   <div className={`space-y-6 ${userRole !== 'premium' ? 'opacity-20 pointer-events-none' : ''}`}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-pink-500/10 text-pink-400 rounded-2xl flex items-center justify-center border border-pink-500/20"><i className="fa-solid fa-volume-high text-2xl"></i></div>
-                      <div><h2 className="text-lg font-bold text-white">မြန်မာ Text-to-Speech</h2><p className="text-xs text-slate-400">Powered by Google TTS</p></div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="flex-1 bg-slate-900 p-4 rounded-2xl border border-slate-800">
-                        <div className="flex justify-between items-center mb-3">
-                           <label className="text-xs text-slate-400 font-bold block">Speed</label>
-                           <span className="text-xs font-bold text-pink-400 min-w-[40px] text-right">{ttsRate >= 0 ? '+' : ''}{ttsRate}%</span>
-                        </div>
-                        <input type="range" min="-50" max="50" step="5" value={ttsRate} onChange={(e) => setTtsRate(parseInt(e.target.value))} className="w-full accent-pink-500" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-300 block mb-2">မြန်မာစာသား (Myanmar Text)</label>
-                      <textarea rows="6" value={ttsInput} onChange={(e) => setTtsInput(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none mb-3" placeholder="မြန်မာစာ ရိုက်ထည့်ပါ..." />
-                      <button onClick={runTtsGeneration} disabled={isSynthesizing} className="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-bold text-white flex justify-center items-center gap-2 text-lg active:scale-95">
-                        {isSynthesizing ? <i className="fa-solid fa-spinner fa-spin text-2xl"></i> : <i className="fa-solid fa-bolt text-2xl"></i>} Generate Audio
-                      </button>
-                    </div>
-                    {synthesizedAudioUrl && (
-                      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-4 mt-4">
-                         <audio controls className="w-full" src={synthesizedAudioUrl} />
-                      </div>
-                    )}
+                    <textarea rows="6" value={ttsInput} onChange={(e) => setTtsInput(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white" placeholder="မြန်မာစာ ရိုက်ထည့်ပါ..." />
+                    <button onClick={runTtsGeneration} disabled={isSynthesizing} className="w-full bg-pink-600 text-white py-4 rounded-2xl font-bold text-lg">Generate Audio</button>
                   </div>
                 </div>
               )}
 
-              {activeTab === 'settings' && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-slate-800 text-slate-300 rounded-2xl flex items-center justify-center border border-slate-700"><i className="fa-solid fa-gear text-2xl"></i></div>
-                    <div><h2 className="text-lg font-bold text-white">Settings</h2><p className="text-xs text-slate-400">External API Setup</p></div>
-                  </div>
-                  
-                  <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                    <label className="text-sm font-bold text-slate-300 block mb-3">Groq API Key (Optional / For large files)</label>
-                    <div className="flex gap-2">
-                       <input type="password" value={userGroqKey} onChange={(e) => { setUserGroqKey(e.target.value); safeSetLocal('user_groq_api_key', e.target.value); }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white text-xs" placeholder="gsk_..." />
-                    </div>
-                  </div>
-                  
-                  <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                    <label className="text-sm font-bold text-slate-300 block mb-3">Gemini API Key (Required for Translate)</label>
-                    <div className="flex gap-2">
-                       <input type="password" value={userGeminiKey} onChange={(e) => { setUserGeminiKey(e.target.value); safeSetLocal('gemini_api_key', e.target.value); }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white text-xs" placeholder="AIzaSy..." />
-                    </div>
-                  </div>
-                </div>
-              )}
-
+              {/* ADMIN TAB */}
               {activeTab === 'admin' && isAdminAuthenticated && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-indigo-500/20 text-indigo-400 rounded-2xl flex items-center justify-center border border-indigo-500/30"><i className="fa-solid fa-shield-halved text-2xl"></i></div>
-                    <div><h2 className="text-lg font-bold text-white">Admin Console</h2><p className="text-xs text-slate-400">Manage Premium Requests</p></div>
-                  </div>
-                  <div className="space-y-3">
-                    {paymentRequests.length === 0 ? <p className="text-slate-500 text-center py-10 bg-slate-900 rounded-2xl">No requests pending.</p> : paymentRequests.map(req => (
-                      <div key={req.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
-                        <div>
-                          <p className="text-indigo-400 font-mono text-sm font-bold tracking-wider">{req.transactionId}</p>
-                          <p className="text-[10px] text-slate-500 mt-1 uppercase">User: {req.userId.substring(0,8)}</p>
-                        </div>
-                        {req.status === 'Pending' ? (
-                          <div className="flex gap-2">
-                            <button onClick={() => handleApproveRequest(req)} className="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-xl text-xs font-bold">Approve</button>
-                            <button onClick={() => handleRejectRequest(req.id)} className="bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs font-bold">Reject</button>
-                          </div>
-                        ) : <span className={`font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg border ${req.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>{req.status}</span>}
+                <div className="space-y-3">
+                  {paymentRequests.length === 0 ? <p className="text-slate-500 text-center py-10">No requests.</p> : paymentRequests.map(req => (
+                    <div key={req.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                      <div>
+                        <p className="text-indigo-400 font-mono text-sm font-bold">{req.transactionId}</p>
+                        <p className="text-[10px] text-slate-500">User: {req.userId.substring(0,8)}</p>
                       </div>
-                    ))}
-                  </div>
+                      {req.status === 'Pending' ? (
+                        <div className="flex gap-2">
+                          <button onClick={() => handleApproveRequest(req)} className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-xs font-bold">Approve</button>
+                          <button onClick={() => handleRejectRequest(req.id)} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-xs font-bold">Reject</button>
+                        </div>
+                      ) : <span className="font-bold text-[10px] uppercase">{req.status}</span>}
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -608,30 +601,15 @@
           {showPaymentModal && (
             <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
               <div className="glass-card w-full max-w-sm rounded-3xl p-6 relative">
-                <button onClick={() => setShowPaymentModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white w-8 h-8 flex items-center justify-center bg-slate-900 rounded-full"><i className="fa-solid fa-xmark"></i></button>
-                <div className="text-center mb-6 pt-2">
-                  <h3 className="text-xl font-bold text-amber-400 mb-2">Go Premium</h3>
-                  <div className="bg-slate-950 inline-block px-5 py-2.5 rounded-2xl border border-slate-800"><span className="text-white text-lg font-bold">၁ လ - ၁၀,၀၀၀ ကျပ်</span></div>
-                </div>
-                
-                {/* --- Added QR Codes Back --- */}
+                <button onClick={() => setShowPaymentModal(false)} className="absolute top-4 right-4 text-slate-500 w-8 h-8"><i className="fa-solid fa-xmark"></i></button>
+                <div className="text-center mb-6 pt-2"><h3 className="text-xl font-bold text-amber-400 mb-2">Go Premium</h3><span className="bg-slate-950 px-5 py-2 rounded-2xl text-white font-bold">၁ လ - ၁၀,၀၀၀ ကျပ်</span></div>
                 <div className="flex gap-4 mb-6">
-                   <div className="flex-1 bg-white p-2 rounded-2xl text-center shadow-lg">
-                      <img src="https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg" className="w-full h-auto rounded-lg object-contain" alt="KBZ Pay" />
-                      <p className="text-black font-extrabold text-[10px] mt-2">KBZ Pay</p>
-                   </div>
-                   <div className="flex-1 bg-white p-2 rounded-2xl text-center shadow-lg">
-                      <img src="https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg" className="w-full h-auto rounded-lg object-contain" alt="Wave Pay" />
-                      <p className="text-black font-extrabold text-[10px] mt-2">Wave Pay</p>
-                   </div>
+                   <div className="flex-1 bg-white p-2 rounded-2xl text-center"><img src="https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg" className="w-full rounded-lg" /><p className="text-black font-extrabold text-[10px] mt-2">KBZ Pay</p></div>
+                   <div className="flex-1 bg-white p-2 rounded-2xl text-center"><img src="https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg" className="w-full rounded-lg" /><p className="text-black font-extrabold text-[10px] mt-2">Wave Pay</p></div>
                 </div>
-
                 <form onSubmit={handlePaymentSubmit} className="space-y-5">
-                  <div>
-                    <label className="text-xs text-slate-400 font-bold mb-2 block text-center">Transaction ID (နောက်ဆုံး ၆ လုံး)</label>
-                    <input type="text" required value={submittedTxId} onChange={(e) => setSubmittedTxId(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white text-center tracking-[0.2em]" placeholder="123456" />
-                  </div>
-                  <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-400 text-slate-950 font-bold py-4 rounded-xl">အတည်ပြုချက် တင်ပြမည်</button>
+                  <input type="text" required value={submittedTxId} onChange={(e) => setSubmittedTxId(e.target.value)} className="w-full bg-slate-950 rounded-xl p-4 text-white text-center tracking-[0.2em]" placeholder="TxID နောက်ဆုံး ၆ လုံး" />
+                  <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-400 text-slate-950 font-bold py-4 rounded-xl">တင်ပြမည်</button>
                 </form>
               </div>
             </div>
@@ -640,23 +618,21 @@
           {showAdminLoginModal && (
             <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
               <div className="glass-card w-full max-w-xs rounded-3xl p-8 relative text-center">
-                <button onClick={() => setShowAdminLoginModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white w-8 h-8"><i className="fa-solid fa-xmark"></i></button>
-                <div className="w-16 h-16 bg-slate-900 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800"><i className="fa-solid fa-lock text-2xl"></i></div>
+                <button onClick={() => setShowAdminLoginModal(false)} className="absolute top-4 right-4 text-slate-500 w-8 h-8"><i className="fa-solid fa-xmark"></i></button>
                 <h3 className="text-lg font-bold text-white mb-6">Admin Login</h3>
                 <form onSubmit={handleAdminLogin} className="space-y-5">
-                  <input type="password" required value={adminPasswordInput} onChange={(e) => setAdminPasswordInput(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white text-center tracking-[0.3em] text-xl" placeholder="••••••" />
-                  <button type="submit" className="w-full bg-slate-100 text-slate-900 font-bold py-4 rounded-xl">ဝင်ရောက်မည်</button>
+                  <input type="password" required value={adminPasswordInput} onChange={(e) => setAdminPasswordInput(e.target.value)} className="w-full bg-slate-950 rounded-xl p-4 text-white text-center tracking-[0.3em] text-xl" placeholder="••••••" />
+                  <button type="submit" className="w-full bg-slate-100 text-slate-900 font-bold py-4 rounded-xl">ဝင်မည်</button>
                 </form>
               </div>
             </div>
           )}
-
         </div>
       );
     }
     
-    try { const root = ReactDOM.createRoot(document.getElementById('root')); root.render(<ErrorBoundary><App /></ErrorBoundary>); } 
-    catch(e) { document.body.innerHTML = '<div style="color:red; padding:20px;">Render Error: ' + e.message + '</div>'; }
+    const root = ReactDOM.createRoot(document.getElementById('root')); 
+    root.render(<App />);
   </script>
 </body>
 </html>
