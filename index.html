@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepLearn - AI Workspace Pro</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom UI Element Styles */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         input[type="range"]::-webkit-slider-thumb { background: #ec4899; }
@@ -14,13 +14,16 @@
 </head>
 <body class="bg-[#020617] text-slate-100 min-h-screen selection:bg-indigo-500/30 font-sans">
 
+    <!-- Global Toast Alerts Display Dynamic System -->
     <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-xl bg-indigo-600 text-white font-semibold text-sm hidden flex items-center justify-center text-center max-w-sm transition-all duration-300">
         <span id="toastMessage"></span>
     </div>
 
+    <!-- MAIN APP DASHBOARD WRAPPER -->
     <div class="min-h-screen pb-20 md:pb-8 flex flex-col items-center pt-4 md:pt-10 px-4">
         <div class="w-full max-w-2xl">
             
+            <!-- APPLICATION BRANDING & CONTROL HEADER -->
             <header class="flex justify-between items-center mb-6 bg-[#0f172a]/40 p-4 rounded-2xl border border-slate-800/60 backdrop-blur-md">
                 <div>
                     <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 flex items-center gap-2">
@@ -41,6 +44,7 @@
                 </div>
             </header>
 
+            <!-- NAVIGATION SEGMENT TABS -->
             <div class="flex overflow-x-auto gap-3 mb-6 pb-2 no-scrollbar">
                 <button onclick="switchTab('transcript')" id="tab-transcript" class="tab-btn flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-xs transition-all whitespace-nowrap bg-indigo-600 text-white shadow-lg">🎙️ Extract Text</button>
                 <button onclick="switchTab('srt')" id="tab-srt" class="tab-btn flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-xs transition-all whitespace-nowrap bg-[#0f172a] border border-slate-800 text-slate-400">🎬 SRT Generator</button>
@@ -50,10 +54,11 @@
                 <button onclick="switchTab('admin')" id="tab-admin" class="tab-btn hidden flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-xs transition-all whitespace-nowrap bg-red-950/40 border border-red-900/60 text-red-400">🛡️ Admin Matrix</button>
             </div>
 
+            <!-- CORE OPERATIONS CONTROLLER CONTAINER -->
             <div class="bg-[#0f172a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-                
                 <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
+                <!-- TAB MODULE 1: AI MEDIA TRANSCRIPTION -->
                 <div id="panel-transcript" class="tab-panel space-y-6">
                     <div class="text-center">
                         <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20 text-2xl shadow-inner">🎙️</div>
@@ -87,10 +92,11 @@
                           <h3 class="text-sm font-bold text-slate-300">Extracted Transcript Result</h3>
                           <button onclick="copyText('transcriptText')" class="text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-500/20 transition-colors">📋 Copy Result</button>
                         </div>
-                        <textarea id="transcriptText" rows="6" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-200 focus:outline-none focus:border-indigo-500/50 text-sm leading-relaxed" placeholder="ဘာသာပြန်ရန် သို့မဟုတ် သိမ်းဆည်းရန် ထွက်လာသော စာသားများ ဤနေရာတွင် ပေါ်လာမည်..."></textarea>
+                        <textarea id="transcriptText" rows="6" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-200 focus:outline-none focus:border-indigo-500/50 text-sm leading-relaxed" placeholder="မြန်မာစာသားများ ဤနေရာတွင် ပေါ်လာမည်..."></textarea>
                     </div>
                 </div>
 
+                <!-- TAB MODULE 2: SMART SRT SUBTITLE GENERATOR -->
                 <div id="panel-srt" class="tab-panel space-y-6 hidden">
                     <div class="text-center pb-6 border-b border-slate-800/80">
                         <div class="w-16 h-16 bg-purple-500/10 text-purple-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-500/20 text-2xl shadow-inner">🎬</div>
@@ -103,10 +109,11 @@
                             <h3 class="text-sm font-bold text-slate-300">Generated Subtitle Output Block</h3>
                             <button onclick="triggerSrtDownload()" class="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-500/20 transition-colors">📥 Save as .srt File</button>
                         </div>
-                        <textarea id="srtText" rows="8" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 font-mono text-xs focus:outline-none focus:border-purple-500/50 leading-5" placeholder="1\n00:00:01,000 --> 00:00:05,000\nSample Text Display Block..."></textarea>
+                        <textarea id="srtText" rows="8" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 font-mono text-xs focus:outline-none focus:border-purple-500/50 leading-5" placeholder="1\n00:00:01,000 --> 00:00:05,000\nSample Text..."></textarea>
                     </div>
                 </div>
 
+                <!-- TAB MODULE 3: AI TRANSLATOR BOARD -->
                 <div id="panel-translation" class="tab-panel space-y-6 hidden">
                     <div class="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-800/80 pb-6">
                         <div class="flex items-center gap-3 self-start">
@@ -146,9 +153,11 @@
                     </div>
                 </div>
 
+                <!-- TAB MODULE 4: NEURAL TEXT-TO-SPEECH (FIXED SERVER ENGINE) -->
                 <div id="panel-tts" class="tab-panel space-y-6 hidden relative">
+                    <!-- Premium Account Wall Layer -->
                     <div id="premiumWall" class="absolute inset-0 z-20 bg-slate-950/95 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center p-6 text-center border border-amber-500/10 transition-all duration-300">
-                          <p class="text-4xl mb-3 animate-bounce">🔒</p>
+                          <p class="text-4xl mb-3">🔒</p>
                           <h2 class="text-lg font-bold text-white mb-1">Premium Level Access Required</h2>
                           <p class="text-xs text-slate-400 mb-6 max-w-sm leading-relaxed">မနီလာ၊ ကိုသီဟ သဘာဝအတိုင်း အသံထွက်စနစ်များနှင့် စာပိုဒ်ရှည်များကို အပိုင်းခွဲထုတ်ယူခြင်းကို Premium အသုံးပြုသူများသာ သုံးခွင့်ပြုထားပါသည်။</p>
                           <button onclick="toggleModal('paymentModal')" class="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:scale-105 transition-all">Unlock Feature</button>
@@ -158,7 +167,7 @@
                         <div class="flex items-center gap-3">
                           <div class="w-12 h-12 bg-pink-500/10 text-pink-400 rounded-2xl flex items-center justify-center border border-pink-500/20 text-xl shadow-inner">🔊</div>
                           <div>
-                              <h2 class="text-lg font-bold text-white">Neural Voice Engine (Automated)</h2>
+                              <h2 class="text-lg font-bold text-white">Neural Voice Engine (Fixed)</h2>
                               <p class="text-xs text-slate-400">မြန်မာစာလုံးရေ ကန့်သတ်ချက်ကျော်လွန်မှုကို အပိုင်းခွဲပြီး ဖြေရှင်းပေးသည့်စနစ်</p>
                           </div>
                         </div>
@@ -184,12 +193,13 @@
 
                         <div>
                           <label class="text-xs font-bold text-slate-400 block mb-2">အသံထွက်ရမည့် မြန်မာစာသားများ</label>
-                          <textarea id="ttsInput" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-pink-500/50 mb-3 text-sm leading-relaxed" placeholder="ဤနေရာတွင် အသံထွက်လိုသည့် စာသားများကို ရိုက်ထည့်ပါ (စာပိုဒ်ရှည်လွန်းပါက ပုဒ်မ '။' အလိုက် ခွဲထုတ်ပေးပါမည်)..."></textarea>
+                          <textarea id="ttsInput" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-pink-500/50 mb-3 text-sm leading-relaxed" placeholder="ဤနေရာတွင် အသံထွက်လိုသည့် စာသားများကို ရိုက်ထည့်ပါ..."></textarea>
                           <button onclick="compileTextToNeuralAudio()" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-bold flex justify-center items-center gap-2 text-md text-white transition-all shadow-lg shadow-pink-600/10">
                               ⚡ အသံဖိုင်အတွဲလိုက် စတင်တည်ဆောက်မည်
                           </button>
                         </div>
 
+                        <!-- Split Audio Chunks Listing -->
                         <div id="ttsResultsContainer" class="space-y-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800 hidden">
                             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wide">Generated Audio Tracks Output</h4>
                             <div id="ttsChunksList" class="space-y-3"></div>
@@ -197,6 +207,7 @@
                     </div>
                 </div>
 
+                <!-- TAB MODULE 5: API CONFIGURATIONS -->
                 <div id="panel-settings" class="tab-panel space-y-4 hidden">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-12 h-12 bg-slate-800 text-slate-300 rounded-2xl flex items-center justify-center border border-slate-700 text-xl shadow-inner">⚙️</div>
@@ -208,6 +219,7 @@
                     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
                         <div>
                             <label class="text-xs font-bold text-slate-400 block mb-2">Neural TTS Distributed Server Target</label>
+                            <!-- API Edge Query Fixed Structure -->
                             <input type="text" id="customTtsApi" class="w-full bg-slate-950 border border-slate-700/60 rounded-lg p-3 text-slate-300 focus:outline-none focus:border-pink-500 font-mono text-xs" value="https://Myanmar-Voice-Generator.pubgm47888.replit.dev/tts" />
                         </div>
                         <div class="pt-2">
@@ -216,6 +228,7 @@
                     </div>
                 </div>
 
+                <!-- TAB MODULE 6: ADMIN SECURE DASHBOARD -->
                 <div id="panel-admin" class="tab-panel space-y-4 hidden">
                     <div class="flex items-center gap-3 mb-4">
                         <div class="w-12 h-12 bg-red-500/20 text-red-400 rounded-2xl flex items-center justify-center border border-red-500/30 text-xl">🛡️</div>
@@ -225,9 +238,6 @@
                         </div>
                     </div>
                     <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Firebase Rules Connection Error များ လုံးဝကင်းလွတ်စေရန်အတွက် Client-Side Control ဖြင့် စီမံနိုင်သော Direct Admin Trigger Slot ကို ထည့်သွင်းပေးထားပါသည်။
-                        </p>
                         <div class="p-4 bg-slate-950 rounded-xl border border-slate-800/80">
                             <h4 class="text-xs font-bold text-amber-400 mb-1">⚡ Instant Authorization Simulation Button</h4>
                             <p class="text-[11px] text-slate-500 mb-3">အောက်ပါခလုတ်ကို ကလစ်နှိပ်လိုက်ရုံဖြင့် လက်ရှိ Browser ကို Premium Activation ထည့်သွင်းပေးမည်ဖြစ်ပါသည်။</p>
@@ -240,71 +250,65 @@
         </div>
     </div>
 
+    <!-- DIALOG LAYOVER MODAL: SHARING SYSTEM -->
     <div id="shareModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-[#0f172a] border border-slate-800 w-full max-w-sm rounded-3xl p-8 shadow-2xl relative text-center animate-fade-in">
-            <button onclick="toggleModal('shareModal')" class="absolute top-5 right-5 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full transition-colors">✕</button>
+        <div class="bg-[#0f172a] border border-slate-800 w-full max-w-sm rounded-3xl p-8 shadow-2xl relative text-center">
+            <button onclick="toggleModal('shareModal')" class="absolute top-5 right-5 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full">✕</button>
             <h3 class="text-lg font-bold text-white mb-2">Share Project Link</h3>
-            <p class="text-xs text-slate-400 mb-6">လက်ရှိ Session Token ကို အောက်ပါလင့်ခ်ဖြင့် အခြားကွန်ပျူတာများသို့ ကူးပြောင်းနိုင်ပါသည်။</p>
             <div id="shareUrlDisplay" class="bg-slate-950 border border-slate-800 p-4 rounded-xl mb-6 font-mono text-[10px] text-indigo-400 break-all select-all border-dashed"></div>
             <button onclick="copyShareUrlToClipboard()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all">Copy Shared URL</button>
         </div>
     </div>
 
+    <!-- DIALOG LAYOVER MODAL: PREMIUM GATEWAY & QR -->
     <div id="paymentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-[#0f172a] border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
-            <button onclick="toggleModal('paymentModal')" class="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full transition-colors">✕</button>
-            
+            <button onclick="toggleModal('paymentModal')" class="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full">✕</button>
             <div class="text-center mb-4">
               <h3 class="text-xl font-bold text-amber-400 mb-1">Upgrade To Premium Pro</h3>
               <span class="bg-slate-950 inline-block px-4 py-1.5 rounded-xl border border-slate-800 text-white text-xs font-bold tracking-wide">၁ လ သုံးစွဲခွင့် - ၁၀,၀၀၀ ကျပ်</span>
             </div>
-            
             <div class="flex gap-3 mb-4">
-               <div class="flex-1 bg-white p-2 rounded-xl text-center shadow-lg transform transition-transform hover:scale-102">
-                  <img src="https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg" class="w-full h-28 object-contain rounded-lg" alt="KPay Payment Target" />
+               <div class="flex-1 bg-white p-2 rounded-xl text-center shadow-lg">
+                  <img src="https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg" class="w-full h-28 object-contain rounded-lg" />
                   <p class="text-black font-black text-[9px] mt-1.5 tracking-tight">KBZ Pay Scan QR</p>
                </div>
-               <div class="flex-1 bg-white p-2 rounded-xl text-center shadow-lg transform transition-transform hover:scale-102">
-                  <img src="https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg" class="w-full h-28 object-contain rounded-lg" alt="WavePay Payment Target" />
+               <div class="flex-1 bg-white p-2 rounded-xl text-center shadow-lg">
+                  <img src="https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg" class="w-full h-28 object-contain rounded-lg" />
                   <p class="text-black font-black text-[9px] mt-1.5 tracking-tight">Wave Pay Scan QR</p>
                </div>
             </div>
-
             <div class="space-y-3">
-                <label class="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Transaction Last 6-Digits Code</label>
-                <input type="text" id="txIdInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 font-mono text-center text-md font-bold tracking-widest" placeholder="000000" />
-                
-                <a href="https://t.me/thetphyo_tun" target="_blank" class="w-full bg-[#2AABEE] hover:bg-[#229ED9] text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs shadow-md text-center block transition-all hover:shadow-cyan-500/10">
-                   ✈️ Telegram သို့ တိုက်ရိုက်ပြေစာပို့၍ အကောင့်ဖွင့်ရန် (အမြန်ဆုံး)
+                <input type="text" id="txIdInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-center text-md font-bold tracking-widest" placeholder="ပြေစာဂဏန်း ၆ လုံး" />
+                <a href="https://t.me/thetphyo_tun" target="_blank" class="w-full bg-[#2AABEE] hover:bg-[#229ED9] text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs shadow-md text-center block">
+                   ✈️ Telegram သို့ တိုက်ရိုက်ပြေစာပို့၍ အကောင့်ဖွင့်ရန်
                 </a>
-
-                <button onclick="transmitDataPayloadToFirebaseFallback()" class="w-full bg-slate-800/80 hover:bg-slate-700 text-amber-400 border border-slate-700/60 font-bold py-2.5 rounded-xl text-xs transition-colors">
+                <button onclick="transmitDataPayloadToFirebaseFallback()" class="w-full bg-slate-800/80 hover:bg-slate-700 text-amber-400 border border-slate-700/60 font-bold py-2.5 rounded-xl text-xs">
                    စနစ်အတွင်းသို့ ပေးပို့တင်ပြမည်
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- DIALOG LAYOVER MODAL: ADMISSION AUTH -->
     <div id="adminLoginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-[#0f172a] border border-slate-800 w-full max-w-xs rounded-3xl p-6 shadow-2xl relative text-center">
             <button onclick="toggleModal('adminLoginModal')" class="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full">✕</button>
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Gate Entrance Code</h3>
-            <input type="password" id="adminPassword" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none text-center tracking-widest text-lg font-mono mb-4" placeholder="••••" />
+            <input type="password" id="adminPassword" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-center tracking-widest text-lg font-mono mb-4" placeholder="••••" />
             <button onclick="verifyAdminGateKey()" class="w-full bg-slate-200 text-slate-900 hover:bg-white font-bold py-3 rounded-xl text-xs transition-colors">Access Dashboard</button>
         </div>
     </div>
 
+    <!-- CORE LOGIC COMPILER JS -->
     <script>
         let currentVoice = 'my-MM-NilarNeural';
         let isPremiumUser = localStorage.getItem('isPremium') === 'true';
 
-        // APPLICATION ENGINE INITIAL LIFTOFF BOOTSTRAPPER
         window.onload = function() {
-            // Restore persistent keys & temporary local string state blocks safely
             if(localStorage.getItem('groq_key')) document.getElementById('userGroqKey').value = localStorage.getItem('groq_key');
             if(localStorage.getItem('gemini_key')) document.getElementById('userGeminiKey').value = localStorage.getItem('gemini_key');
             if(localStorage.getItem('transcript_data')) document.getElementById('transcriptText').value = localStorage.getItem('transcript_data');
-            
             evaluatePremiumStateStatus();
         };
 
@@ -326,7 +330,6 @@
                 b.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg');
                 b.classList.add('bg-[#0f172a]', 'border-slate-800', 'text-slate-400');
             });
-            
             document.getElementById('panel-' + tabId).classList.remove('hidden');
             const activeBtn = document.getElementById('tab-' + tabId);
             activeBtn.classList.remove('bg-[#0f172a]', 'border-slate-800', 'text-slate-400');
@@ -336,174 +339,158 @@
         function processSelectedMedia() {
             const fileInput = document.getElementById('mediaFile');
             if(fileInput.files.length > 0) {
-                const targetFile = fileInput.files[0];
-                document.getElementById('fileNameDisplay').innerText = "🎵 " + targetFile.name;
-                const computedSizeMb = (targetFile.size / (1024 * 1024)).toFixed(2);
-                document.getElementById('fileSizeDisplay').innerText = `Computed Size Loadout: ${computedSizeMb} MB`;
+                document.getElementById('fileNameDisplay').innerText = "🎵 " + fileInput.files[0].name;
+                document.getElementById('fileSizeDisplay').innerText = `Computed Size: ${(fileInput.files[0].size / (1024 * 1024)).toFixed(2)} MB`;
             }
         }
 
         function copyText(id) {
             const textContent = document.getElementById(id).value.trim();
-            if(!textContent) return showToast("ကော်ပီကူးယူရန် ဒေတာဘာမှမရှိပါ");
+            if(!textContent) return showToast("ကော်ပီကူးယူရန် ဒေတာမရှိပါ");
             navigator.clipboard.writeText(textContent);
-            showToast("Copied to local clipboard cluster!");
+            showToast("Copied to clipboard!");
         }
 
-        // PIPELINE MODULE 1: EXTRACTION CORE DECK RUNNER
+        // TRANSCRIPTION PIPELINE
         async function executeTranscriptionPipeline() {
             const fileInput = document.getElementById('mediaFile');
             if(fileInput.files.length === 0) return showToast("မီဒီယာဖိုင်တစ်ခုခု အရင်ရွေးချယ်ပေးပါ။");
             
             const localGroqKey = document.getElementById('userGroqKey').value.trim();
-            // Encrypted system injection dynamic backup key sequence bypass strategy
             const internalCoreKey = "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"; 
             const operativeToken = localGroqKey || internalCoreKey;
 
             const logElement = document.getElementById('logMessage');
             logElement.classList.remove('hidden');
-            logElement.innerText = "AI မှ စာသားထုတ်ယူခြင်း လုပ်ငန်းစဉ်ကို လုပ်ဆောင်နေပါသည်... ⏳";
+            logElement.innerText = "AI မှ စာသားထုတ်ယူနေပါသည်... ⏳";
 
             const payloadData = new FormData();
             payloadData.append('file', fileInput.files[0]);
             payloadData.append('model', 'whisper-large-v3');
 
             try {
-                const networkConnectionResponse = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${operativeToken}` },
                     body: payloadData
                 });
-                if(networkConnectionResponse.ok) {
-                    const transformationOutcomeJson = await networkConnectionResponse.json();
-                    document.getElementById('transcriptText').value = transformationOutcomeJson.text;
-                    localStorage.setItem('transcript_data', transformationOutcomeJson.text);
-                    showToast("စာသားထုတ်ယူမှု အောင်မြင်စွာပြီးဆုံးပါပြီ။");
+                if(response.ok) {
+                    const result = await response.json();
+                    document.getElementById('transcriptText').value = result.text;
+                    localStorage.setItem('transcript_data', result.text);
+                    showToast("စာသားထုတ်ယူမှု အောင်မြင်ပါသည်။");
                     logElement.innerText = "✅ လုပ်ငန်းစဉ် အောင်မြင်စွာ ပြီးမြောက်သွားပါပြီ။";
-                } else {
-                    throw new Error("API Exception Token Collision Limit triggered");
-                }
-            } catch(errorReference) {
+                } else { throw new Error(); }
+            } catch(e) {
                 showToast("ဆာဗာချိတ်ဆက်မှု အဆင်မပြေဖြစ်သွားပါသည်။");
-                logElement.innerText = "⚠️ API Key Limit ပြည့်နေပါသည်။ ကိုယ်ပိုင် Groq Key ထည့်သွင်းပေးပါ။";
+                logElement.innerText = "⚠️ API Key Error! ကိုယ်ပိုင် Groq Key ထည့်သွင်းပေးပါ။";
             }
         }
 
-        // PIPELINE MODULE 2: SRT FORMATTING ENGINE
+        // SRT GENERATOR
         function buildSrtTimelines() {
-            const plainTextSource = document.getElementById('transcriptText').value.trim();
-            if(!plainTextSource) return showToast("ကျေးဇူးပြု၍ ပထမဦးစွာ စာသားထုတ်ယူပေးပါ သို့မဟုတ် စာရိုက်ထည့်ပါ။");
-            
-            // Dynamic sequence timeline segmentation generator index algorithm block
-            let computedSrtOutputString = "1\n00:00:01,000 --> 00:00:12,000\n" + plainTextSource;
-            document.getElementById('srtText').value = computedSrtOutputString;
+            const text = document.getElementById('transcriptText').value.trim();
+            if(!text) return showToast("ကျေးဇူးပြု၍ ပထမဦးစွာ စာသားထုတ်ယူပေးပါ။");
+            document.getElementById('srtText').value = "1\n00:00:01,000 --> 00:00:12,000\n" + text;
             showToast("SRT Subtitle တည်ဆောက်မှု အောင်မြင်ပါသည်။");
         }
 
         function triggerSrtDownload() {
-            const targetStringData = document.getElementById('srtText').value.trim();
-            if(!targetStringData) return showToast("ဒေါင်းလုဒ်ဆွဲရန် မည်သည့် SRT ဒေတာမျှ မရှိသေးပါ။");
-            const fileBlobSequence = new Blob([targetStringData], { type: 'text/srt' });
-            const dynamicObjectUrl = URL.createObjectURL(fileBlobSequence);
-            const hiddenDownloadTriggerAnchor = document.createElement('a');
-            hiddenDownloadTriggerAnchor.href = dynamicObjectUrl; 
-            hiddenDownloadTriggerAnchor.download = "workspace_subtitle.srt"; 
-            hiddenDownloadTriggerAnchor.click();
+            const data = document.getElementById('srtText').value.trim();
+            if(!data) return showToast("ဒေါင်းလုဒ်ဆွဲရန် ဒေတာ မရှိသေးပါ။");
+            const blob = new Blob([data], { type: 'text/srt' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = "subtitle.srt"; a.click();
         }
 
-        // PIPELINE MODULE 3: EMULATED DEEP AI TRANSLATION LAYER
-        async function executeTranslationPipeline(translationTargetType) {
-            const activeGeminiKey = document.getElementById('userGeminiKey').value.trim();
-            if(!activeGeminiKey) return showToast("Gemini API Key ထည့်သွင်းပေးရန် လိုအပ်ပါသည်။");
+        // GEMINI TRANSLATION
+        async function executeTranslationPipeline(type) {
+            const key = document.getElementById('userGeminiKey').value.trim();
+            if(!key) return showToast("Gemini API Key ထည့်သွင်းပေးရန် လိုအပ်ပါသည်။");
 
-            const textSourceLoad = translationTargetType === 'srt' ? document.getElementById('srtText').value.trim() : document.getElementById('transcriptText').value.trim();
-            if(!textSourceLoad) return showToast("ဘာသာပြန်ဆိုရန် စာသားအရင် ဖြည့်သွင်းပေးပါ။");
+            const source = type === 'srt' ? document.getElementById('srtText').value.trim() : document.getElementById('transcriptText').value.trim();
+            if(!source) return showToast("ဘာသာပြန်ဆိုရန် စာသားမရှိပါ။");
 
-            const selectedLanguage = document.getElementById('targetLang').value;
-            const contextInstructionPrompt = `Translate this text block content exactly into ${selectedLanguage}. If it is in SRT timestamp format structure, do not modify or touch numbers, timeline indicators or layout. Only convert linguistic words: \n\n ${textSourceLoad}`;
+            const lang = document.getElementById('targetLang').value;
+            const prompt = `Translate this text block content exactly into ${lang}. Keep SRT structure intact if applicable:\n\n ${source}`;
 
             try {
-                const serverResponseChannel = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeGeminiKey}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: contextInstructionPrompt }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
-                const parsedJSONDataPayload = await serverResponseChannel.json();
-                const processedOutputTranslationResultText = parsedJSONDataPayload.candidates[0].content.parts[0].text;
-                
-                if(translationTargetType === 'srt') {
-                    document.getElementById('translatedSrtText').value = processedOutputTranslationResultText;
-                } else {
-                    document.getElementById('translatedText').value = processedOutputTranslationResultText;
-                }
-                showToast("ဘာသာပြန်ဆိုမှု လုပ်ငန်းစဉ် ပြီးမြောက်ပါပြီ။ ✨");
-            } catch(exceptionError) {
-                showToast("Gemini Key မမှန်ကန်ပါ သို့မဟုတ် Endpoint Limit ကျော်လွန်နေပါသည်။");
-            }
+                const json = await res.json();
+                const out = json.candidates[0].content.parts[0].text;
+                if(type === 'srt') { document.getElementById('translatedSrtText').value = out; }
+                else { document.getElementById('translatedText').value = out; }
+                showToast("ဘာသာပြန်ဆိုမှု ပြီးမြောက်ပါပြီ။ ✨");
+            } catch(e) { showToast("Gemini API Key မမှန်ကန်ပါ။"); }
         }
 
-        // PIPELINE MODULE 4: TEXT TO SPEECH NEURAL AUTOMATION CONVERTER
-        function updateActiveVoice(selectedVoiceGender) {
-            currentVoice = selectedVoiceGender;
-            document.getElementById('voice-nilar').className = selectedVoiceGender === 'my-MM-NilarNeural' ? "py-3 px-2 text-xs font-bold rounded-xl border bg-pink-600 border-pink-400 text-white shadow-md transition-all" : "py-3 px-2 text-xs font-bold rounded-xl border bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800 transition-all";
-            document.getElementById('voice-thiha').className = selectedVoiceGender === 'my-MM-ThihaNeural' ? "py-3 px-2 text-xs font-bold rounded-xl border bg-pink-600 border-pink-400 text-white shadow-md transition-all" : "py-3 px-2 text-xs font-bold rounded-xl border bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800 transition-all";
+        // FIXED NEURAL TTS AUDIO ENGINE 
+        function updateActiveVoice(voice) {
+            currentVoice = voice;
+            document.getElementById('voice-nilar').className = voice === 'my-MM-NilarNeural' ? "py-3 px-2 text-xs font-bold rounded-xl border bg-pink-600 border-pink-400 text-white shadow-md transition-all" : "py-3 px-2 text-xs font-bold rounded-xl border bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800 transition-all";
+            document.getElementById('voice-thiha').className = voice === 'my-MM-ThihaNeural' ? "py-3 px-2 text-xs font-bold rounded-xl border bg-pink-600 border-pink-400 text-white shadow-md transition-all" : "py-3 px-2 text-xs font-bold rounded-xl border bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800 transition-all";
         }
 
         function compileTextToNeuralAudio() {
-            const sourceUserTextInputText = document.getElementById('ttsInput').value.trim();
-            if(!sourceUserTextInputText) return showToast("အသံထုတ်ရန် မြန်မာစာသား တစ်ခုခု အရင်ရိုက်ထည့်ပေးပါ။");
+            const textInput = document.getElementById('ttsInput').value.trim();
+            if(!textInput) return showToast("အသံထုတ်ရန် မြန်မာစာသား ရိုက်ထည့်ပေးပါ။");
 
-            const globalTtsBaseUrlEndpoint = document.getElementById('customTtsApi').value.trim();
-            const voiceSpeedLevelConfigValue = document.getElementById('ttsSpeed').value;
-            const voicePitchLevelConfigValue = document.getElementById('ttsPitch').value;
+            const baseUrl = document.getElementById('customTtsApi').value.trim();
+            const speed = document.getElementById('ttsSpeed').value;
+            const pitch = document.getElementById('ttsPitch').value;
 
-            // Deep Sentence Splitting Engine Strategy inside Native Array Blocks
-            const sentencePartsBlockArray = sourceUserTextInputText.split('။');
-            let structuralProcessingChunks = [];
-            let compositeBufferLineAccumulator = "";
+            // Split into safe chunks using sentence boundaries
+            const sentences = textInput.split('။');
+            let chunks = [];
+            let currentChunk = "";
 
-            for(let indexLoop = 0; indexLoop < sentencePartsBlockArray.length; indexLoop++) {
-                if(!sentencePartsBlockArray[indexLoop].trim()) continue;
-                if((compositeBufferLineAccumulator + sentencePartsBlockArray[indexLoop]).length > 650) {
-                    structuralProcessingChunks.push(compositeBufferLineAccumulator.trim() + "။");
-                    compositeBufferLineAccumulator = sentencePartsBlockArray[indexLoop];
+            for(let i = 0; i < sentences.length; i++) {
+                if(!sentences[i].trim()) continue;
+                if((currentChunk + sentences[i]).length > 400) {
+                    chunks.push(currentChunk.trim() + "။");
+                    currentChunk = sentences[i];
                 } else {
-                    compositeBufferLineAccumulator += sentencePartsBlockArray[indexLoop] + "။";
+                    currentChunk += sentences[i] + "။";
                 }
             }
-            if(compositeBufferLineAccumulator.trim()) structuralProcessingChunks.push(compositeBufferLineAccumulator.trim());
+            if(currentChunk.trim()) chunks.push(currentChunk.trim());
 
-            // Render Output Target Controls to Interface View DOM
             document.getElementById('ttsResultsContainer').classList.remove('hidden');
-            const targetContainerListNode = document.getElementById('ttsChunksList');
-            targetContainerListNode.innerHTML = ""; 
+            const listNode = document.getElementById('ttsChunksList');
+            listNode.innerHTML = ""; 
 
-            structuralProcessingChunks.forEach((individualChunkStringText, chunkIndexPosition) => {
-                const encodedUriParamString = encodeURIComponent(individualChunkStringText);
-                const stringConnectorCharacterSymbol = globalTtsBaseUrlEndpoint.includes('?') ? '&' : '?';
-                const definitiveVoiceGeneratedRequestStringUrl = `${globalTtsBaseUrlEndpointTracking = globalTtsBaseUrlEndpoint}${stringConnectorCharacterSymbol}text=${encodedUriParamString}&voice=${currentVoice}&speed=${voiceSpeedLevelConfigValue}&pitch=${voicePitchLevelConfigValue}`;
+            chunks.forEach((chunkText, idx) => {
+                // Fixed URL Query Parameter Build Format
+                const cleanText = chunkText.replace(/[\n\r]/g, ' '); 
+                const audioUrl = `${baseUrl}?text=${encodeURIComponent(cleanText)}&voice=${currentVoice}&speed=${speed}&pitch=${pitch}`;
 
-                const listBlockElementWrapperCardNode = document.createElement('div');
-                listBlockElementWrapperCardNode.className = "bg-slate-950 p-4 rounded-xl border border-slate-800/80 space-y-2";
-                listBlockElementWrapperCardNode.innerHTML = `
-                    <p class="text-xs text-slate-400 leading-relaxed font-semibold">အပိုင်း (${chunkIndexPosition + 1}) - ${individualChunkStringText.substring(0, 50)}...</p>
+                const card = document.createElement('div');
+                card.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2";
+                card.innerHTML = `
+                    <p class="text-xs text-slate-400 font-semibold">အပိုင်း (${idx + 1}) - ${chunkText.substring(0, 40)}...</p>
                     <div class="flex items-center gap-3">
-                        <audio controls src="${definitiveVoiceGeneratedRequestStringUrl}" class="w-full h-8"></audio>
-                        <a href="${definitiveVoiceGeneratedRequestStringUrl}" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap block">📥 Download</a>
+                        <!-- Direct Streaming Audio Tag with Native Fallback UI Controls -->
+                        <audio controls class="w-full h-9 bg-slate-900 rounded-lg" preload="none">
+                            <source src="${audioUrl}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                        <a href="${audioUrl}" target="_blank" download="audio_chunk_${idx+1}.mp3" class="bg-pink-600 hover:bg-pink-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors block">📥 Save</a>
                     </div>
                 `;
-                targetContainerListNode.appendChild(listBlockElementWrapperCardNode);
+                listNode.appendChild(card);
             });
-            showToast(`စာသားများကို စုစုပေါင်း အပိုင်း (${structuralProcessingChunks.length}) ပိုင်း ခွဲထုတ်တည်ဆောက်ပြီးပါပြီ။`);
+            showToast(`စာသားများကို အပိုင်း (${chunks.length}) ပိုင်း ခွဲထုတ်တည်ဆောက်ပြီးပါပြီ။`);
         }
 
-        // PIPELINE MODULE 5: FIREBASE EMULATION CONNECTOR & STORAGE INTEGRATOR
+        // FIREBASE EMULATION & PREMIUM ACCESS
         function transmitDataPayloadToFirebaseFallback() {
-            const enteredTransactionCodeStringValue = document.getElementById('txIdInput').value.trim();
-            if(!enteredTransactionCodeStringValue) return showToast("ကျေးဇူးပြု၍ ပြေစာနောက်ဆုံးဂဏန်း ၆ လုံး ထည့်သွင်းပေးပါ။");
-            
-            // Client-Side Security Storage Node Registration
-            showToast("ပြေစာအချက်အလက်ကို ပေးပို့ပြီးပါပြီ။ Admin မှ မကြာမီ အတည်ပြုပေးပါလိမ့်မည်။");
+            if(!document.getElementById('txIdInput').value.trim()) return showToast("ပြေစာနောက်ဆုံးဂဏန်း ၆ လုံး ထည့်သွင်းပေးပါ။");
+            showToast("ပေးပို့ပြီးပါပြီ။ Admin မှ မကြာမီ အတည်ပြုပေးပါလိမ့်မည်။");
             toggleModal('paymentModal');
         }
 
@@ -511,54 +498,46 @@
             localStorage.setItem('isPremium', 'true');
             isPremiumUser = true;
             evaluatePremiumStateStatus();
-            showToast("Premium Verification Config Bypass Token Installed! ✨");
+            showToast("Premium Active ဖြစ်သွားပါပြီ။ ✨");
         }
 
         function evaluatePremiumStateStatus() {
             if(isPremiumUser) {
                 document.getElementById('premiumWall').classList.add('hidden');
-                const mainUpgradeActionButtonRef = document.getElementById('upgradeBtn');
-                mainUpgradeActionButtonRef.innerText = "👑 Premium Verified";
-                mainUpgradeActionButtonRef.className = "bg-emerald-500 text-white font-black px-4 py-2 rounded-xl text-xs shadow-md shadow-emerald-500/10 cursor-default";
+                const btn = document.getElementById('upgradeBtn');
+                btn.innerText = "👑 Premium Verified";
+                btn.className = "bg-emerald-500 text-white font-black px-4 py-2 rounded-xl text-xs shadow-md cursor-default";
             }
         }
 
         function verifyAdminGateKey() {
-            const administrativeAccessPasswordValue = document.getElementById('adminPassword').value;
-            if(administrativeAccessPasswordValue === "111") {
+            if(document.getElementById('adminPassword').value === "111") {
                 document.getElementById('tab-admin').classList.remove('hidden');
                 toggleModal('adminLoginModal');
                 switchTab('admin');
-                showToast("Admin access authorized successfully!");
-            } else {
-                showToast("လုံခြုံရေး ကုဒ်စကားဝှက် မှားယွင်းနေပါသည်။");
-            }
+                showToast("Welcome Admin!");
+            } else { showToast("စကားဝှက် မှားယွင်းနေပါသည်။"); }
         }
 
         function generateShareLink() {
-            document.getElementById('shareUrlDisplay').innerText = window.location.origin + window.location.pathname + "?session_state_active=true";
+            document.getElementById('shareUrlDisplay').innerText = window.location.href;
             toggleModal('shareModal');
         }
 
         function copyShareUrlToClipboard() {
             navigator.clipboard.writeText(document.getElementById('shareUrlDisplay').innerText);
-            showToast("Shared session target link copied!");
+            showToast("Link copied!");
             toggleModal('shareModal');
         }
 
-        function saveApiKey(keyRegistrationIdentifierType) {
-            if(keyRegistrationIdentifierType === 'groq') {
-                const valueString = document.getElementById('userGroqKey').value.trim();
-                if(valueString) { localStorage.setItem('groq_key', valueString); showToast("Groq API Key တိုကင် သိမ်းဆည်းပြီးပါပြီ။"); }
-            } else if(keyRegistrationIdentifierType === 'gemini') {
-                const valueString = document.getElementById('userGeminiKey').value.trim();
-                if(valueString) { localStorage.setItem('gemini_key', valueString); showToast("Gemini API Key တိုကင် သိမ်းဆည်းပြီးပါပြီ။"); }
-            }
+        function saveApiKey(type) {
+            const val = document.getElementById('user' + type.charAt(0).toUpperCase() + type.slice(1) + 'Key').value.trim();
+            if(val) { localStorage.setItem(type + '_key', val); showToast("API Key တိုကင် သိမ်းဆည်းပြီးပါပြီ။"); }
         }
 
         function resetApplicationState() {
             localStorage.clear();
-            showToast("Caches and memory keys successfully flushed. Refreshing environment.");
+            showToast("Memory cleared!");
             setTimeout(() => window.location.reload(), 1000);
         }
     </script>
