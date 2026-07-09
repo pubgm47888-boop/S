@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepLearn - AI Workspace Pro</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- React & Babel CDN -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-[#020617] text-slate-100 min-h-screen selection:bg-indigo-500/30">
 
     <div id="root"></div>
 
+    <!-- Firebase SDK Compat v10 -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -158,44 +161,26 @@
             const unsub = auth.onAuthStateChanged(user => {
               if (user) {
                 setFirebaseUser(user);
-                const statusRef = db.collection('artifacts').doc(safeAppId).collection('users').doc(user.uid).collection('profile').doc('status');
+                // Simplified dynamic sub-collection path for status to bypass rigid structure rules
+                const statusRef = db.collection('deeplearn_users').doc(user.uid);
                 statusRef.onSnapshot(docSnap => {
                   if (docSnap.exists) {
                     setUserRole(docSnap.data().role || 'user');
                     setPremiumExpiresAt(docSnap.data().expiresAt || '');
                   } else {
-                    statusRef.set({ role: 'user', expiresAt: '' });
+                    statusRef.set({ role: 'user', expiresAt: '', updated: new Date().toISOString() }, {merge: true});
                   }
                 }, err => console.warn(err));
               }
             });
 
-            const readShareData = async () => {
-               try {
-                 const params = new URLSearchParams(window.location.search);
-                 const shareId = params.get('share');
-                 if(shareId) {
-                    const shareRef = db.collection('artifacts').doc(safeAppId).collection('public').doc('data').collection('shares').doc(shareId);
-                    const docSnap = await shareRef.get();
-                    if (docSnap.exists) {
-                        const data = docSnap.data();
-                        if(data.transcript) setTranscriptText(data.transcript);
-                        if(data.segments) setTranscriptSegments(data.segments);
-                        if(data.srt) setSrtText(data.srt);
-                        if(data.translatedText) setTranslatedText(data.translatedText);
-                        if(data.translatedSrt) setTranslatedSrtText(data.translatedSrt);
-                        showToast("မျှဝေထားသော အချက်အလက်များ ဖွင့်ပြီးပါပြီ။");
-                    }
-                 }
-               } catch(e) {}
-            };
-            setTimeout(readShareData, 1000);
             return () => unsub();
           }, []);
 
+          // Listen for active payments (Simplified Collection Root)
           useEffect(() => {
             if (!firebaseUser) return;
-            const paymentsRef = db.collection('artifacts').doc(safeAppId).collection('public').doc('data').collection('payments');
+            const paymentsRef = db.collection('deeplearn_payments');
             const unsub = paymentsRef.onSnapshot(snapshot => {
               const list = [];
               snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
@@ -215,7 +200,7 @@
           // --- Lucide Refresh Trigger ---
           useEffect(() => {
             if(window.lucide) { window.lucide.createIcons(); }
-          }, [activeTab, ttsChunks, showPaymentModal, showAdminLoginModal, showShareModal, userRole]);
+          }, [activeTab, ttsChunks, showPaymentModal, showAdminLoginModal, showShareModal, userRole, paymentRequests]);
 
           // --- Test API Keys System ---
           const testGroqKey = async () => {
@@ -426,26 +411,38 @@
 
           // --- Premium Activation Actions ---
           const handlePaymentSubmit = async (e) => {
-            e.preventDefault(); if (!firebaseUser) return;
+            e.preventDefault(); 
+            const uid = firebaseUser ? firebaseUser.uid : 'anonymous_' + Math.random().toString(36).substring(2,7);
+            
             try {
-              await db.collection('artifacts').doc(safeAppId).collection('public').doc('data').collection('payments').doc(firebaseUser.uid).set({
-                userId: firebaseUser.uid, username: "User", transactionId: submittedTxId, status: "Pending", timestamp: new Date().toISOString()
+              // Write to simplified independent root path
+              await db.collection('deeplearn_payments').doc(uid).set({
+                userId: uid, 
+                username: "App User", 
+                transactionId: submittedTxId, 
+                status: "Pending", 
+                timestamp: new Date().toISOString()
               });
-              showToast("Admin ထံ တင်ပြပြီးပါပြီ။"); setShowPaymentModal(false); setSubmittedTxId('');
-            } catch (err) { showToast("တင်ပြမှု မအောင်မြင်ပါ။"); }
+              showToast("Admin ထံ အတည်ပြုချက် တင်ပြပြီးပါပြီ။"); 
+              setShowPaymentModal(false); 
+              setSubmittedTxId('');
+            } catch (err) { 
+              console.error(err);
+              showToast("⚠️ Firebase သို့ တင်မရပါ။ အောက်ပါ Telegram လင့်ခ်မှတစ်ဆင့် တိုက်ရိုက်ပေးပို့ပေးပါ။"); 
+            }
           };
 
           const handleApproveRequest = async (request) => {
             try {
               const exp = new Date(); exp.setDate(exp.getDate() + 30); 
-              await db.collection('artifacts').doc(safeAppId).collection('users').doc(request.userId).collection('profile').doc('status').set({ role: 'premium', expiresAt: exp.toISOString() });
-              await db.collection('artifacts').doc(safeAppId).collection('public').doc('data').collection('payments').doc(request.userId).update({ status: 'Approved' });
+              await db.collection('deeplearn_users').doc(request.userId).set({ role: 'premium', expiresAt: exp.toISOString() }, {merge: true});
+              await db.collection('deeplearn_payments').doc(request.userId).update({ status: 'Approved' });
               showToast("Premium အတည်ပြုပြီးပါပြီ။");
             } catch (err) {}
           };
 
           const handleRejectRequest = async (id) => { 
-            try { await db.collection('artifacts').doc(safeAppId).collection('public').doc('data').collection('payments').doc(id).update({ status: 'Rejected' }); } catch(e){}
+            try { await db.collection('deeplearn_payments').doc(id).update({ status: 'Rejected' }); } catch(e){}
           };
 
           const handleAdminLogin = (e) => {
@@ -458,7 +455,7 @@
           const generateShareLink = async () => {
              try {
                  const shareId = Math.random().toString(36).substring(2, 10);
-                 await db.collection('artifacts').doc(safeAppId).collection('public').doc('data').collection('shares').doc(shareId).set({
+                 await db.collection('deeplearn_shares').doc(shareId).set({
                      transcript: transcriptText, segments: transcriptSegments, srt: srtText, translatedText: translatedText, translatedSrt: translatedSrtText, timestamp: new Date().toISOString()
                  });
                  const url = window.location.href.split('?')[0] + "?share=" + shareId;
@@ -477,8 +474,8 @@
             <div className="min-h-screen pb-20 md:pb-8 flex flex-col items-center pt-4 md:pt-10 px-4 font-sans">
               
               {toast.show && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-lg bg-indigo-600 text-white font-semibold text-sm flex items-center gap-2 transition-all">
-                  <i data-lucide="info" className="w-5 h-5"></i> {toast.message}
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-lg bg-indigo-600 text-white font-semibold text-sm flex items-center gap-2 transition-all text-center max-w-sm">
+                  <i data-lucide="info" className="w-5 h-5 shrink-0"></i> {toast.message}
                 </div>
               )}
 
@@ -536,7 +533,7 @@
                     </button>
                     {isAdminAuthenticated && (
                       <button onClick={() => setActiveTab('admin')} className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap ${activeTab === 'admin' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-[#0f172a] border border-slate-800 text-slate-400'}`}>
-                        <i data-lucide="shield-check" className="w-4 h-4"></i> Admin Board
+                        <i data-lucide="shield-check" className="w-4 h-4"></i> Admin Board ({paymentRequests.length})
                       </button>
                     )}
                 </div>
@@ -746,13 +743,14 @@
                             <div>
                               <p className="text-indigo-400 font-mono text-sm font-bold tracking-wider">{req.transactionId}</p>
                               <p className="text-[10px] text-slate-500 mt-1 uppercase">UID: {req.userId?.substring(0,8)}</p>
+                              <span className={`text-[9px] px-2 py-0.5 rounded font-bold ${req.status === 'Pending' ? 'bg-amber-500/10 text-amber-400' : req.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>{req.status}</span>
                             </div>
-                            {req.status === 'Pending' ? (
+                            {req.status === 'Pending' && (
                               <div className="flex gap-2">
                                 <button onClick={() => handleApproveRequest(req)} className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors">Approve</button>
                                 <button onClick={() => handleRejectRequest(req.id)} className="bg-red-500/20 text-red-400 hover:bg-red-500/30 px-4 py-2 rounded-xl text-xs font-bold transition-colors">Reject</button>
                               </div>
-                            ) : <span className="font-bold text-[10px] uppercase px-3 py-1.5 bg-slate-950 rounded-lg text-slate-400">{req.status}</span>}
+                            )}
                           </div>
                         ))}
                       </div>
@@ -805,17 +803,23 @@
                        </div>
                     </div>
 
-                    <form onSubmit={handlePaymentSubmit} className="space-y-5">
+                    <form onSubmit={handlePaymentSubmit} className="space-y-4">
                       <div>
                         <label className="text-xs text-slate-400 font-bold mb-2 block text-center">Transaction ID (နောက်ဆုံး ၆ လုံး/ ၈ လုံး)</label>
                         <input type="text" required value={submittedTxId} onChange={(e) => setSubmittedTxId(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-amber-500 font-mono tracking-[0.2em] text-center text-lg" placeholder="123456" />
                       </div>
                       
-                      <a href="https://t.me/thetphyo_tun" target="_blank" rel="noreferrer" className="w-full bg-[#2AABEE]/10 border border-[#2AABEE]/20 text-[#2AABEE] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-sm">
-                         <i data-lucide="send" className="w-5 h-5"></i> ပြေစာအား Telegram သို့ပို့ရန်
+                      <div className="text-center text-xs text-slate-400 py-1">
+                         Firebase တင်မရပါက Telegram သို့ တိုက်ရိုက်ပေးပို့နိုင်ပါသည်-
+                      </div>
+
+                      <a href="https://t.me/thetphyo_tun" target="_blank" rel="noreferrer" className="w-full bg-[#2AABEE] hover:bg-[#229ED9] text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-sm shadow-md">
+                         <i data-lucide="send" className="w-5 h-5 fill-white"></i> Telegram သို့ တိုက်ရိုက်ပြေစာပို့ရန်
                       </a>
 
-                      <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-400 text-slate-950 font-bold py-4 rounded-xl shadow-lg text-sm transition-transform active:scale-95">အတည်ပြုချက် တင်ပြမည်</button>
+                      <button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 font-bold py-3 rounded-xl text-xs transition-transform active:scale-95">
+                         Firebase စနစ်သို့ တင်ပြမည်
+                      </button>
                     </form>
                   </div>
                 </div>
