@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepLearn - AI Workspace Pro</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -14,16 +13,13 @@
 </head>
 <body class="bg-[#020617] text-slate-100 min-h-screen selection:bg-indigo-500/30 font-sans">
 
-    <!-- Global Toast Alerts Display Dynamic System -->
     <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-xl bg-indigo-600 text-white font-semibold text-sm hidden flex items-center justify-center text-center max-w-sm transition-all duration-300">
         <span id="toastMessage"></span>
     </div>
 
-    <!-- MAIN APP DASHBOARD WRAPPER -->
     <div class="min-h-screen pb-20 md:pb-8 flex flex-col items-center pt-4 md:pt-10 px-4">
         <div class="w-full max-w-2xl">
             
-            <!-- APPLICATION BRANDING & CONTROL HEADER -->
             <header class="flex justify-between items-center mb-6 bg-[#0f172a]/40 p-4 rounded-2xl border border-slate-800/60 backdrop-blur-md">
                 <div>
                     <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 flex items-center gap-2">
@@ -44,7 +40,6 @@
                 </div>
             </header>
 
-            <!-- NAVIGATION SEGMENT TABS -->
             <div class="flex overflow-x-auto gap-3 mb-6 pb-2 no-scrollbar">
                 <button onclick="switchTab('transcript')" id="tab-transcript" class="tab-btn flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-xs transition-all whitespace-nowrap bg-indigo-600 text-white shadow-lg">🎙️ Extract Text</button>
                 <button onclick="switchTab('srt')" id="tab-srt" class="tab-btn flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-xs transition-all whitespace-nowrap bg-[#0f172a] border border-slate-800 text-slate-400">🎬 SRT Generator</button>
@@ -54,11 +49,9 @@
                 <button onclick="switchTab('admin')" id="tab-admin" class="tab-btn hidden flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-xs transition-all whitespace-nowrap bg-red-950/40 border border-red-900/60 text-red-400">🛡️ Admin Matrix</button>
             </div>
 
-            <!-- CORE OPERATIONS CONTROLLER CONTAINER -->
             <div class="bg-[#0f172a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-                <!-- TAB MODULE 1: AI MEDIA TRANSCRIPTION -->
                 <div id="panel-transcript" class="tab-panel space-y-6">
                     <div class="text-center">
                         <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20 text-2xl shadow-inner">🎙️</div>
@@ -96,7 +89,6 @@
                     </div>
                 </div>
 
-                <!-- TAB MODULE 2: SMART SRT SUBTITLE GENERATOR -->
                 <div id="panel-srt" class="tab-panel space-y-6 hidden">
                     <div class="text-center pb-6 border-b border-slate-800/80">
                         <div class="w-16 h-16 bg-purple-500/10 text-purple-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-500/20 text-2xl shadow-inner">🎬</div>
@@ -113,7 +105,6 @@
                     </div>
                 </div>
 
-                <!-- TAB MODULE 3: AI TRANSLATOR BOARD -->
                 <div id="panel-translation" class="tab-panel space-y-6 hidden">
                     <div class="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-800/80 pb-6">
                         <div class="flex items-center gap-3 self-start">
@@ -153,9 +144,7 @@
                     </div>
                 </div>
 
-                <!-- TAB MODULE 4: NEURAL TEXT-TO-SPEECH (FIXED SERVER ENGINE) -->
                 <div id="panel-tts" class="tab-panel space-y-6 hidden relative">
-                    <!-- Premium Account Wall Layer -->
                     <div id="premiumWall" class="absolute inset-0 z-20 bg-slate-950/95 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center p-6 text-center border border-amber-500/10 transition-all duration-300">
                           <p class="text-4xl mb-3">🔒</p>
                           <h2 class="text-lg font-bold text-white mb-1">Premium Level Access Required</h2>
@@ -167,7 +156,7 @@
                         <div class="flex items-center gap-3">
                           <div class="w-12 h-12 bg-pink-500/10 text-pink-400 rounded-2xl flex items-center justify-center border border-pink-500/20 text-xl shadow-inner">🔊</div>
                           <div>
-                              <h2 class="text-lg font-bold text-white">Neural Voice Engine (Fixed)</h2>
+                              <h2 class="text-lg font-bold text-white">Neural Voice Engine (Replit Live)</h2>
                               <p class="text-xs text-slate-400">မြန်မာစာလုံးရေ ကန့်သတ်ချက်ကျော်လွန်မှုကို အပိုင်းခွဲပြီး ဖြေရှင်းပေးသည့်စနစ်</p>
                           </div>
                         </div>
@@ -199,7 +188,6 @@
                           </button>
                         </div>
 
-                        <!-- Split Audio Chunks Listing -->
                         <div id="ttsResultsContainer" class="space-y-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800 hidden">
                             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wide">Generated Audio Tracks Output</h4>
                             <div id="ttsChunksList" class="space-y-3"></div>
@@ -207,7 +195,6 @@
                     </div>
                 </div>
 
-                <!-- TAB MODULE 5: API CONFIGURATIONS -->
                 <div id="panel-settings" class="tab-panel space-y-4 hidden">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-12 h-12 bg-slate-800 text-slate-300 rounded-2xl flex items-center justify-center border border-slate-700 text-xl shadow-inner">⚙️</div>
@@ -219,8 +206,7 @@
                     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
                         <div>
                             <label class="text-xs font-bold text-slate-400 block mb-2">Neural TTS Distributed Server Target</label>
-                            <!-- API Edge Query Fixed Structure -->
-                            <input type="text" id="customTtsApi" class="w-full bg-slate-950 border border-slate-700/60 rounded-lg p-3 text-slate-300 focus:outline-none focus:border-pink-500 font-mono text-xs" value="https://Myanmar-Voice-Generator.pubgm47888.replit.dev/tts" />
+                            <input type="text" id="customTtsApi" class="w-full bg-slate-950 border border-slate-700/60 rounded-lg p-3 text-slate-300 focus:outline-none focus:border-pink-500 font-mono text-xs" value="https://b92aae15-22b7-4bff-9f38-584ca504f0f7-00-yqp4ss1555nz.sisko.replit.dev/tts" />
                         </div>
                         <div class="pt-2">
                             <button onclick="resetApplicationState()" class="bg-red-950 text-red-400 border border-red-900 hover:bg-red-900/40 px-4 py-2 rounded-xl text-xs font-bold transition-all">Clear Memory Data Cache</button>
@@ -228,7 +214,6 @@
                     </div>
                 </div>
 
-                <!-- TAB MODULE 6: ADMIN SECURE DASHBOARD -->
                 <div id="panel-admin" class="tab-panel space-y-4 hidden">
                     <div class="flex items-center gap-3 mb-4">
                         <div class="w-12 h-12 bg-red-500/20 text-red-400 rounded-2xl flex items-center justify-center border border-red-500/30 text-xl">🛡️</div>
@@ -250,7 +235,6 @@
         </div>
     </div>
 
-    <!-- DIALOG LAYOVER MODAL: SHARING SYSTEM -->
     <div id="shareModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-[#0f172a] border border-slate-800 w-full max-w-sm rounded-3xl p-8 shadow-2xl relative text-center">
             <button onclick="toggleModal('shareModal')" class="absolute top-5 right-5 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full">✕</button>
@@ -260,7 +244,6 @@
         </div>
     </div>
 
-    <!-- DIALOG LAYOVER MODAL: PREMIUM GATEWAY & QR -->
     <div id="paymentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-[#0f172a] border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
             <button onclick="toggleModal('paymentModal')" class="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full">✕</button>
@@ -290,7 +273,6 @@
         </div>
     </div>
 
-    <!-- DIALOG LAYOVER MODAL: ADMISSION AUTH -->
     <div id="adminLoginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-[#0f172a] border border-slate-800 w-full max-w-xs rounded-3xl p-6 shadow-2xl relative text-center">
             <button onclick="toggleModal('adminLoginModal')" class="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-900 w-8 h-8 rounded-full">✕</button>
@@ -300,7 +282,6 @@
         </div>
     </div>
 
-    <!-- CORE LOGIC COMPILER JS -->
     <script>
         let currentVoice = 'my-MM-NilarNeural';
         let isPremiumUser = localStorage.getItem('isPremium') === 'true';
@@ -429,7 +410,7 @@
             } catch(e) { showToast("Gemini API Key မမှန်ကန်ပါ။"); }
         }
 
-        // FIXED NEURAL TTS AUDIO ENGINE 
+        // NEURAL TTS AUDIO ENGINE 
         function updateActiveVoice(voice) {
             currentVoice = voice;
             document.getElementById('voice-nilar').className = voice === 'my-MM-NilarNeural' ? "py-3 px-2 text-xs font-bold rounded-xl border bg-pink-600 border-pink-400 text-white shadow-md transition-all" : "py-3 px-2 text-xs font-bold rounded-xl border bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800 transition-all";
@@ -444,7 +425,6 @@
             const speed = document.getElementById('ttsSpeed').value;
             const pitch = document.getElementById('ttsPitch').value;
 
-            // Split into safe chunks using sentence boundaries
             const sentences = textInput.split('။');
             let chunks = [];
             let currentChunk = "";
@@ -465,8 +445,8 @@
             listNode.innerHTML = ""; 
 
             chunks.forEach((chunkText, idx) => {
-                // Fixed URL Query Parameter Build Format
                 const cleanText = chunkText.replace(/[\n\r]/g, ' '); 
+                // Replit Core standard payload structure compatibility matching mapping
                 const audioUrl = `${baseUrl}?text=${encodeURIComponent(cleanText)}&voice=${currentVoice}&speed=${speed}&pitch=${pitch}`;
 
                 const card = document.createElement('div');
@@ -474,7 +454,6 @@
                 card.innerHTML = `
                     <p class="text-xs text-slate-400 font-semibold">အပိုင်း (${idx + 1}) - ${chunkText.substring(0, 40)}...</p>
                     <div class="flex items-center gap-3">
-                        <!-- Direct Streaming Audio Tag with Native Fallback UI Controls -->
                         <audio controls class="w-full h-9 bg-slate-900 rounded-lg" preload="none">
                             <source src="${audioUrl}" type="audio/mpeg">
                             Your browser does not support the audio element.
