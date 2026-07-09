@@ -148,7 +148,7 @@
                     <div id="premiumWall" class="absolute inset-0 z-20 bg-slate-950/95 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center p-6 text-center border border-amber-500/10 transition-all duration-300">
                           <p class="text-4xl mb-3">🔒</p>
                           <h2 class="text-lg font-bold text-white mb-1">Premium Level Access Required</h2>
-                          <p class="text-xs text-slate-400 mb-6 max-w-sm leading-relaxed">မနီလာ၊ ကိုသီဟ သဘာဝအတိုင်း အသံထွက်စနစ်များနှင့် စာပိုဒ်ရှည်များကို အပိုင်းခွဲထုတ်ယူခြင်းကို Premium အသုံးပြုသူများသာ သုံးခွင့်ပြုထားပါသည်။</p>
+                          <p class="text-xs text-slate-400 mb-6 max-w-sm leading-relaxed">မနီလာ၊ ကိုသီဟ သဘာဝအတိုင်း အသံထွက်စနစ်ကို Premium အသုံးပြုသူများသာ သုံးခွင့်ပြုထားပါသည်။</p>
                           <button onclick="toggleModal('paymentModal')" class="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:scale-105 transition-all">Unlock Feature</button>
                     </div>
 
@@ -156,8 +156,8 @@
                         <div class="flex items-center gap-3">
                           <div class="w-12 h-12 bg-pink-500/10 text-pink-400 rounded-2xl flex items-center justify-center border border-pink-500/20 text-xl shadow-inner">🔊</div>
                           <div>
-                              <h2 class="text-lg font-bold text-white">Neural Voice Engine (Replit Live)</h2>
-                              <p class="text-xs text-slate-400">မြန်မာစာလုံးရေ ကန့်သတ်ချက်ကျော်လွန်မှုကို အပိုင်းခွဲပြီး ဖြေရှင်းပေးသည့်စနစ်</p>
+                              <h2 class="text-lg font-bold text-white">Neural Voice Engine (Replit Direct)</h2>
+                              <p class="text-xs text-slate-400">စာသားများကို အပိုင်းမခွဲဘဲ တိုက်ရိုက်အသံထွက်ပေးမည့်စနစ်</p>
                           </div>
                         </div>
 
@@ -184,12 +184,12 @@
                           <label class="text-xs font-bold text-slate-400 block mb-2">အသံထွက်ရမည့် မြန်မာစာသားများ</label>
                           <textarea id="ttsInput" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white focus:outline-none focus:border-pink-500/50 mb-3 text-sm leading-relaxed" placeholder="ဤနေရာတွင် အသံထွက်လိုသည့် စာသားများကို ရိုက်ထည့်ပါ..."></textarea>
                           <button onclick="compileTextToNeuralAudio()" class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-bold flex justify-center items-center gap-2 text-md text-white transition-all shadow-lg shadow-pink-600/10">
-                              ⚡ အသံဖိုင်အတွဲလိုက် စတင်တည်ဆောက်မည်
+                              ⚡ အသံဖိုင် စတင်တည်ဆောက်မည်
                           </button>
                         </div>
 
                         <div id="ttsResultsContainer" class="space-y-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800 hidden">
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wide">Generated Audio Tracks Output</h4>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wide">Generated Audio Track Output</h4>
                             <div id="ttsChunksList" class="space-y-3"></div>
                         </div>
                     </div>
@@ -206,7 +206,8 @@
                     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
                         <div>
                             <label class="text-xs font-bold text-slate-400 block mb-2">Neural TTS Distributed Server Target</label>
-                            <input type="text" id="customTtsApi" class="w-full bg-slate-950 border border-slate-700/60 rounded-lg p-3 text-slate-300 focus:outline-none focus:border-pink-500 font-mono text-xs" value="https://b92aae15-22b7-4bff-9f38-584ca504f0f7-00-yqp4ss1555nz.sisko.replit.dev/tts" />
+                            <input type="text" id="customTtsApi" oninput="handleTtsLinkChange(this.value)" class="w-full bg-slate-950 border border-slate-700/60 rounded-lg p-3 text-slate-300 focus:outline-none focus:border-pink-500 font-mono text-xs" value="https://b92aae15-22b7-4bff-9f38-584ca504f0f7-00-yqp4ss1555nz.sisko.replit.dev/tts" />
+                            <p class="text-[11px] text-slate-500 mt-1">💡 Link ကို ဒီမှာ ပြောင်းလိုက်တာနဲ့ အသံထွက်စနစ်က အလိုအလျောက် Update ဖြစ်သွားပါလိမ့်မယ်။</p>
                         </div>
                         <div class="pt-2">
                             <button onclick="resetApplicationState()" class="bg-red-950 text-red-400 border border-red-900 hover:bg-red-900/40 px-4 py-2 rounded-xl text-xs font-bold transition-all">Clear Memory Data Cache</button>
@@ -290,8 +291,17 @@
             if(localStorage.getItem('groq_key')) document.getElementById('userGroqKey').value = localStorage.getItem('groq_key');
             if(localStorage.getItem('gemini_key')) document.getElementById('userGeminiKey').value = localStorage.getItem('gemini_key');
             if(localStorage.getItem('transcript_data')) document.getElementById('transcriptText').value = localStorage.getItem('transcript_data');
+            
+            // Load saved TTS Link if available
+            if(localStorage.getItem('custom_tts_url')) {
+                document.getElementById('customTtsApi').value = localStorage.getItem('custom_tts_url');
+            }
             evaluatePremiumStateStatus();
         };
+
+        function handleTtsLinkChange(val) {
+            localStorage.setItem('custom_tts_url', val.trim());
+        }
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -363,7 +373,7 @@
                     logElement.innerText = "✅ လုပ်ငန်းစဉ် အောင်မြင်စွာ ပြီးမြောက်သွားပါပြီ။";
                 } else { throw new Error(); }
             } catch(e) {
-                showToast("ဆာဗာချိတ်ဆက်မှု အဆင်မပြေဖြစ်သွားပါသည်။");
+                showToast("ဆာဗာချက်ဆက်မှု အဆင်မပြေဖြစ်သွားပါသည်။");
                 logElement.innerText = "⚠️ API Key Error! ကိုယ်ပိုင် Groq Key ထည့်သွင်းပေးပါ။";
             }
         }
@@ -417,53 +427,49 @@
             document.getElementById('voice-thiha').className = voice === 'my-MM-ThihaNeural' ? "py-3 px-2 text-xs font-bold rounded-xl border bg-pink-600 border-pink-400 text-white shadow-md transition-all" : "py-3 px-2 text-xs font-bold rounded-xl border bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800 transition-all";
         }
 
+        // DIRECT MODE AUDIO GENERATION
         function compileTextToNeuralAudio() {
             const textInput = document.getElementById('ttsInput').value.trim();
             if(!textInput) return showToast("အသံထုတ်ရန် မြန်မာစာသား ရိုက်ထည့်ပေးပါ။");
 
-            const baseUrl = document.getElementById('customTtsApi').value.trim();
+            let baseUrl = document.getElementById('customTtsApi').value.trim();
+            
+            // Auto Format Link Endpoints 
+            if (!baseUrl.endsWith('/tts')) {
+                if (baseUrl.endsWith('/')) baseUrl = baseUrl + 'tts';
+                else baseUrl = baseUrl + '/tts';
+            }
+
             const speed = document.getElementById('ttsSpeed').value;
             const pitch = document.getElementById('ttsPitch').value;
 
-            const sentences = textInput.split('။');
-            let chunks = [];
-            let currentChunk = "";
-
-            for(let i = 0; i < sentences.length; i++) {
-                if(!sentences[i].trim()) continue;
-                if((currentChunk + sentences[i]).length > 400) {
-                    chunks.push(currentChunk.trim() + "။");
-                    currentChunk = sentences[i];
-                } else {
-                    currentChunk += sentences[i] + "။";
-                }
-            }
-            if(currentChunk.trim()) chunks.push(currentChunk.trim());
+            // Strip out newlines to protect URL structure
+            const cleanText = textInput.replace(/[\n\r]/g, ' '); 
+            const audioUrl = `${baseUrl}?text=${encodeURIComponent(cleanText)}&voice=${currentVoice}&speed=${speed}&pitch=${pitch}`;
 
             document.getElementById('ttsResultsContainer').classList.remove('hidden');
             const listNode = document.getElementById('ttsChunksList');
             listNode.innerHTML = ""; 
 
-            chunks.forEach((chunkText, idx) => {
-                const cleanText = chunkText.replace(/[\n\r]/g, ' '); 
-                // Replit Core standard payload structure compatibility matching mapping
-                const audioUrl = `${baseUrl}?text=${encodeURIComponent(cleanText)}&voice=${currentVoice}&speed=${speed}&pitch=${pitch}`;
-
-                const card = document.createElement('div');
-                card.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2";
-                card.innerHTML = `
-                    <p class="text-xs text-slate-400 font-semibold">အပိုင်း (${idx + 1}) - ${chunkText.substring(0, 40)}...</p>
-                    <div class="flex items-center gap-3">
-                        <audio controls class="w-full h-9 bg-slate-900 rounded-lg" preload="none">
-                            <source src="${audioUrl}" type="audio/mpeg">
-                            Your browser does not support the audio element.
-                        </audio>
-                        <a href="${audioUrl}" target="_blank" download="audio_chunk_${idx+1}.mp3" class="bg-pink-600 hover:bg-pink-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors block">📥 Save</a>
-                    </div>
-                `;
-                listNode.appendChild(card);
-            });
-            showToast(`စာသားများကို အပိုင်း (${chunks.length}) ပိုင်း ခွဲထုတ်တည်ဆောက်ပြီးပါပြီ။`);
+            const card = document.createElement('div');
+            card.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2";
+            
+            card.innerHTML = `
+                <p class="text-xs text-slate-400 font-semibold">အသံဖိုင် တည်ဆောက်ပြီးပါပြီ</p>
+                <div class="flex items-center gap-3">
+                    <audio controls class="w-full h-9 bg-slate-900 rounded-lg" preload="auto">
+                        <source src="${audioUrl}" type="audio/mpeg">
+                    </audio>
+                    <a href="${audioUrl}" target="_blank" download="audio_output.mp3" class="bg-pink-600 hover:bg-pink-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors block">📥 Save</a>
+                </div>
+            `;
+            listNode.appendChild(card);
+            
+            // Force dynamic audio player engine restart buffer mapping
+            const audEl = card.querySelector('audio');
+            audEl.load();
+            
+            showToast(`အသံဖိုင် တည်ဆောက်မှု အောင်မြင်ပါသည်။`);
         }
 
         // FIREBASE EMULATION & PREMIUM ACCESS
