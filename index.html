@@ -5,60 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeepLearn AI Workspace</title>
   
-  <!-- Global Error Catcher -->
   <script>
     window.onerror = function(message) { console.error(message); return true; };
   </script>
 
-  <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- React & ReactDOM -->
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   
-  <!-- Babel for In-Browser JSX Compilation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
 
-  <!-- Firebase SDKs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app-compat.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-auth-compat.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/အစ်ကိုတောင်းဆိုထားတဲ့အတိုင်း Payment Modal ထဲက ငွေလွှဲပြေစာပို့ရမယ့် **Telegram အကောင့် (`@thetphyo_tun`)** ကို ပြင်ဆင်ပေးထားပါတယ်။ ဒါ့အပြင် အပေါ်ဘက် ညာဘက်ထောင့် (Upgrade ခလုတ်ဘေးနား) မှာပါ အစ်ကို့ရဲ့ **Telegram Channel (`@Deeplearnxai`)** ဆီ တိုက်ရိုက်သွားလို့ရမယ့် ခလုတ်လေးတစ်ခုပါ သေသပ်စွာ ထည့်သွင်းပေးလိုက်ပါတယ်။ 
-
-အောက်က Code အပြည့်အစုံကို ကူးယူပြီး အသုံးပြုနိုင်ပါပြီ-
-
-```html
-<!DOCTYPE html>
-<html lang="my" class="dark">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DeepLearn AI Workspace</title>
-  
-  <!-- Global Error Catcher -->
-  <script>
-    window.onerror = function(message) { console.error(message); return true; };
-  </script>
-
-  <!-- Tailwind CSS & FontAwesome -->
-  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-  <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css)" />
-
-  <!-- React & ReactDOM -->
-  <script crossorigin src="[https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js](https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js)"></script>
-  <script crossorigin src="[https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js](https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js)"></script>
-  
-  <!-- Babel for In-Browser JSX Compilation -->
-  <script src="[https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js](https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js)"></script>
-
-  <!-- Firebase SDKs -->
-  <script src="[https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app-compat.min.js](https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app-compat.min.js)"></script>
-  <script src="[https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-auth-compat.min.js](https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-auth-compat.min.js)"></script>
-  <script src="[https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore-compat.min.js](https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore-compat.min.js)"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore-compat.min.js"></script>
 
   <style>
-    @import url('[https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap)');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Outfit', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; padding: 0; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -206,7 +170,7 @@
         if(!userGroqKey) { showToast("Key အရင်ထည့်ပါ", "warning"); return; }
         setLogs(["Groq API Key ကို စစ်ဆေးနေပါသည်..."]);
         try {
-          const res = await fetch('[https://api.groq.com/openai/v1/models](https://api.groq.com/openai/v1/models)', { headers: { 'Authorization': `Bearer ${userGroqKey}` } });
+          const res = await fetch('https://api.groq.com/openai/v1/models', { headers: { 'Authorization': `Bearer ${userGroqKey}` } });
           if (res.ok) { setGroqStatus('success'); showToast("✅ Groq Key မှန်ကန်ပါသည်။", "success"); setLogs(["✅ Groq Key အလုပ်လုပ်ပါသည်။"]); } 
           else { setGroqStatus('error'); showToast("❌ Groq Key မှားယွင်းနေပါသည်။", "error"); setLogs(["❌ Groq Key မှားယွင်းနေပါသည်။"]); }
         } catch(e) { setGroqStatus('error'); showToast("Connection Error", "error"); }
@@ -215,7 +179,7 @@
       const testGeminiKey = async () => {
         if(!userGeminiKey) { showToast("Key အရင်ထည့်ပါ", "warning"); return; }
         try {
-          const res = await fetch(`[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$){userGeminiKey}`, {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
           });
           if (res.ok) { setGeminiStatus('success'); showToast("✅ Gemini Key မှန်ကန်ပါသည်။", "success"); } 
@@ -301,7 +265,7 @@
         if (userGroqKey && groqStatus !== 'error') {
           try {
             setLogs(["ကိုယ်ပိုင် Key ဖြင့် AI သို့ ဖိုင်ပေးပို့နေပါသည်..."]);
-            const res = await fetch('[https://api.groq.com/openai/v1/audio/transcriptions](https://api.groq.com/openai/v1/audio/transcriptions)', { method: 'POST', headers: { 'Authorization': `Bearer ${userGroqKey}` }, body: formData });
+            const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${userGroqKey}` }, body: formData });
             if (res.ok) { const data = await res.json(); resultText = data.text; resultSegments = data.segments || []; success = true; }
           } catch (err) {}
         }
@@ -311,7 +275,7 @@
           let keyIndex = activeKeyIndex;
           for (let i = 0; i < initialGroqKeys.length; i++) {
             try {
-              const res = await fetch('[https://api.groq.com/openai/v1/audio/transcriptions](https://api.groq.com/openai/v1/audio/transcriptions)', { method: 'POST', headers: { 'Authorization': `Bearer ${initialGroqKeys[keyIndex]}` }, body: formData });
+              const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${initialGroqKeys[keyIndex]}` }, body: formData });
               if (res.ok) { const data = await res.json(); resultText = data.text; resultSegments = data.segments || []; success = true; setActiveKeyIndex(keyIndex); break; }
             } catch (err) { keyIndex = (keyIndex + 1) % initialGroqKeys.length; }
           }
@@ -349,7 +313,7 @@
         setIsProcessing(true);
         const prompt = type === 'srt' ? `Translate this SRT file into ${targetLang}. Preserve all numbers and timestamps exactly. Only translate the text. SRT:\n\n${sourceContent}` : `Translate the following text into ${targetLang}:\n\n${sourceContent}`;
         try {
-          const res = await fetch(`[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$){userGeminiKey}`, {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
           });
           if (!res.ok) throw new Error("API Error");
@@ -391,7 +355,7 @@
           const playbackSpeed = 1.0 + (ttsRate / 100);
           const playNextChunk = () => {
             if(currentChunk >= chunks.length) { setIsSynthesizing(false); showToast("အသံဖန်တီးမှု ပြီးဆုံးပါပြီ။", "success"); return; }
-            const speechUrl = `[https://translate.google.com/translate_tts?ie=UTF-8&tl=my&client=tw-ob&q=$](https://translate.google.com/translate_tts?ie=UTF-8&tl=my&client=tw-ob&q=$){encodeURIComponent(chunks[currentChunk])}`;
+            const speechUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=my&client=tw-ob&q=${encodeURIComponent(chunks[currentChunk])}`;
             const audioObj = new Audio(speechUrl);
             audioRef.current = audioObj;
             audioObj.playbackRate = playbackSpeed;
@@ -407,7 +371,7 @@
         } catch (err) { setTtsErrorMsg("⚠ Error: " + err.message); setIsSynthesizing(false); }
       };
 
-      // --- Admin Actions ---
+      // --- Admin Actions (Fixed Error and added Telegram integration) ---
       const handlePaymentSubmit = async (e) => {
         e.preventDefault();
         
@@ -418,6 +382,7 @@
 
         let currentUser = firebaseUser;
         
+        // Force Anonymous login if missing
         if (!currentUser) {
            try {
              const cred = await auth.signInAnonymously();
@@ -487,12 +452,6 @@
                 <p className="text-xs text-slate-500 font-medium mt-1">AI Workspace Pro</p>
               </div>
               <div className="flex gap-2">
-                
-                {/* --- New Telegram Channel Button --- */}
-                <a href="[https://t.me/Deeplearnxai](https://t.me/Deeplearnxai)" target="_blank" className="glass-card hover:bg-slate-800 text-[#2AABEE] w-10 h-10 rounded-xl flex items-center justify-center transition-colors" title="Join Telegram Channel">
-                  <i className="fa-brands fa-telegram text-xl"></i>
-                </a>
-
                 {userRole !== 'premium' ? (
                   <button onClick={() => setShowPaymentModal(true)} className="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1 shadow-lg hover:scale-105 transition-all">
                     <i className="fa-solid fa-crown text-base"></i> Upgrade
@@ -527,6 +486,7 @@
               {/* TRANSCRIPT TAB */}
               {activeTab === 'transcript' && (
                 <div className="space-y-6">
+                  {/* API Box (Inline for ease of use) */}
                   <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
                      <label className="text-xs font-bold text-slate-300 block mb-2">Groq API Key ထည့်ရန် (Optional)</label>
                      <div className="flex gap-2">
@@ -653,7 +613,6 @@
             </main>
           </div>
 
-          {/* PAYMENT MODAL */}
           {showPaymentModal && (
             <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
               <div className="glass-card w-full max-w-sm rounded-3xl p-6 relative">
@@ -661,12 +620,12 @@
                 <div className="text-center mb-6 pt-2"><h3 className="text-xl font-bold text-amber-400 mb-2">Go Premium</h3><span className="bg-slate-950 px-5 py-2 rounded-2xl text-white font-bold">၁ လ - ၁၀,၀၀၀ ကျပ်</span></div>
                 
                 <div className="flex gap-4 mb-6">
-                   <div className="flex-1 bg-white p-2 rounded-2xl text-center"><img src="[https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg](https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg)" className="w-full rounded-lg" /><p className="text-black font-extrabold text-[10px] mt-2">KBZ Pay</p></div>
-                   <div className="flex-1 bg-white p-2 rounded-2xl text-center"><img src="[https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg](https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg)" className="w-full rounded-lg" /><p className="text-black font-extrabold text-[10px] mt-2">Wave Pay</p></div>
+                   <div className="flex-1 bg-white p-2 rounded-2xl text-center"><img src="https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg" className="w-full rounded-lg" /><p className="text-black font-extrabold text-[10px] mt-2">KBZ Pay</p></div>
+                   <div className="flex-1 bg-white p-2 rounded-2xl text-center"><img src="https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg" className="w-full rounded-lg" /><p className="text-black font-extrabold text-[10px] mt-2">Wave Pay</p></div>
                 </div>
                 
-                {/* --- Updated Telegram Contact Button --- */}
-                <a href="[https://t.me/thetphyo_tun](https://t.me/thetphyo_tun)" target="_blank" className="w-full bg-[#2AABEE]/10 border border-[#2AABEE]/20 text-[#2AABEE] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#2AABEE]/20 transition-colors text-sm mb-4">
+                {/* Telegram Link Added Here */}
+                <a href="https://t.me/SUKI1111" target="_blank" className="w-full bg-[#2AABEE]/10 border border-[#2AABEE]/20 text-[#2AABEE] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#2AABEE]/20 transition-colors text-sm mb-4">
                    <i className="fa-brands fa-telegram text-xl"></i> ငွေလွှဲပြေစာအား Telegram သို့ပို့ရန်
                 </a>
 
@@ -678,7 +637,6 @@
             </div>
           )}
 
-          {/* ADMIN LOGIN MODAL */}
           {showAdminLoginModal && (
             <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
               <div className="glass-card w-full max-w-xs rounded-3xl p-8 relative text-center">
@@ -696,7 +654,7 @@
     }
     
     const root = ReactDOM.createRoot(document.getElementById('root')); 
-    root.render(<App/>);
+    root.render(<App />);
   </script>
 </body>
 </html>
