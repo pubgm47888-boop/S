@@ -90,7 +90,7 @@
       
       const [showPaymentModal, setShowPaymentModal] = useState(false);
       const [submittedTxId, setSubmittedTxId] = useState('');
-      const [activeTab, setActiveTab] = useState('tts'); // Changed default tab to 'tts' for easy testing
+      const [activeTab, setActiveTab] = useState('tts'); // Default set to TTS for easy testing
       const [activeKeyIndex, setActiveKeyIndex] = useState(0);
 
       const [selectedFile, setSelectedFile] = useState(null);
@@ -109,15 +109,14 @@
         { id: 'Thai', name: '🇹🇭 ထိုင်း' }, { id: 'Chinese', name: '🇨🇳 တရုတ်' }
       ];
 
-      // TTS States Update
+      // --- NEW: Flask Backend Edge-TTS States ---
       const [ttsInput, setTtsInput] = useState('');
-      const [selectedVoice, setSelectedVoice] = useState('Nilar');
+      const [selectedVoice, setSelectedVoice] = useState('my-MM-NilarNeural');
       const [ttsRate, setTtsRate] = useState(0);   
       const [ttsPitch, setTtsPitch] = useState(0); 
       const [isSynthesizing, setIsSynthesizing] = useState(false);
       const [synthesizedAudioUrl, setSynthesizedAudioUrl] = useState(null);
       const [ttsErrorDetail, setTtsErrorMsg] = useState('');
-      const audioRef = useRef(null);
 
       const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
       const [paymentRequests, setPaymentRequests] = useState([]);
@@ -327,60 +326,58 @@
         setIsProcessing(false);
       };
 
-      // --- TTS Logic Updated ---
-      const chunkBurmeseText = (text, maxLength) => {
-        const chunks = [];
-        let current = text;
-        while (current.length > 0) {
-          if (current.length <= maxLength) { chunks.push(current); break; }
-          let splitIndex = current.lastIndexOf("။", maxLength);
-          if (splitIndex === -1) splitIndex = current.lastIndexOf("၊", maxLength);
-          if (splitIndex === -1) splitIndex = current.lastIndexOf(" ", maxLength);
-          if (splitIndex === -1 || splitIndex === 0) splitIndex = maxLength; else splitIndex += 1;
-          chunks.push(current.slice(0, splitIndex).trim());
-          current = current.slice(splitIndex).trim();
-        }
-        return chunks.filter(c => c.length > 0);
-      };
 
+      // --- NEW: Python Backend (Edge-TTS) Connection ---
       const runTtsGeneration = async () => {
         if (userRole !== 'premium') { showToast("Premium ဖြင့်သာ သုံးနိုင်ပါသည်။", "error"); return; }
         const text = ttsInput.trim();
         if (!text) { showToast("စာသားရိုက်ထည့်ပါ!", "error"); return; }
 
-        setIsSynthesizing(true); setTtsErrorMsg(''); setSynthesizedAudioUrl(null);
+        setIsSynthesizing(true); 
+        setTtsErrorMsg(''); 
+        setSynthesizedAudioUrl(null);
+        
+        const existingPlayer = document.getElementById("tts-player");
+        if (existingPlayer) existingPlayer.pause();
+
         try {
-          const chunks = chunkBurmeseText(text, 150);
-          let currentChunk = 0;
-          if (audioRef.current) audioRef.current.pause();
+          // Send request to your Flask backend `/generate` endpoint
+          const response = await fetch('/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: text,
+              voice: selectedVoice,
+              rate: ttsRate,
+              pitch: ttsPitch
+            }),
+          });
 
-          const playbackSpeed = 1.0 + (ttsRate / 100);
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || "Server error (TTS engine offline)");
+          }
+
+          // Receive MP3 Blob and create URL
+          const blob = await response.blob();
+          const audioUrl = URL.createObjectURL(blob);
           
-          const playNextChunk = () => {
-            if(currentChunk >= chunks.length) { setIsSynthesizing(false); showToast("အသံဖန်တီးမှု ပြီးဆုံးပါပြီ။", "success"); return; }
-            
-            const speechUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=my&client=tw-ob&q=${encodeURIComponent(chunks[currentChunk])}`;
-            const audioObj = new Audio(speechUrl);
-            audioRef.current = audioObj;
-            
-            audioObj.playbackRate = playbackSpeed;
-            // Google Translate Voice is naturally female. If 'Thiha' is selected, we lower pitch to simulate male voice.
-            if (selectedVoice === 'Thiha') {
-               audioObj.preservesPitch = false;
-               audioObj.playbackRate = playbackSpeed * 0.85; // slightly slower & deeper for Thiha
-            } else {
-               audioObj.preservesPitch = (ttsPitch == 0); 
-            }
+          setSynthesizedAudioUrl(audioUrl);
+          showToast("အသံဖန်တီးမှု အောင်မြင်ပါသည်။", "success");
+          
+          // Auto-play the generated audio
+          setTimeout(() => {
+             const player = document.getElementById("tts-player");
+             if (player) player.play();
+          }, 100);
 
-            audioObj.onended = () => { currentChunk++; playNextChunk(); };
-            audioObj.onerror = () => { setTtsErrorMsg(`အသံဖိုင် ဖွင့်၍မရပါ။`); currentChunk++; playNextChunk(); };
-            audioObj.play().then(() => { if (chunks.length === 1) setSynthesizedAudioUrl(speechUrl); }).catch(err => {
-              setTtsErrorMsg("Browser အသံပိတ်ထားပါသည်။ Play ခလုတ်ကို နှိပ်ပါ။"); setIsSynthesizing(false);
-            });
-          };
-          playNextChunk();
-        } catch (err) { setTtsErrorMsg("⚠ Error: " + err.message); setIsSynthesizing(false); }
+        } catch (err) { 
+          setTtsErrorMsg("⚠ " + err.message); 
+        } finally {
+          setIsSynthesizing(false);
+        }
       };
+
 
       // --- Admin Actions ---
       const handlePaymentSubmit = async (e) => {
@@ -586,7 +583,7 @@
                 </div>
               )}
 
-              {/* TTS TAB */}
+              {/* NEW FLASK-BASED TTS TAB */}
               {activeTab === 'tts' && (
                 <div className="space-y-6 relative">
                   {userRole !== 'premium' && (
@@ -598,20 +595,19 @@
                   )}
                   <div className={`space-y-6 ${userRole !== 'premium' ? 'opacity-20 pointer-events-none' : ''}`}>
                     
-                    {/* UI - Voice Selection & Sliders */}
                     <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-4">
                       <div>
-                         <label className="text-xs text-slate-400 font-bold block mb-2">Voice Type</label>
+                         <label className="text-xs text-slate-400 font-bold block mb-2">အသံ ရွေးချယ်ရန် (Voice Type)</label>
                          <select value={selectedVoice} onChange={(e) => setSelectedVoice(e.target.value)} className="w-full bg-slate-950 p-3 rounded-xl text-white outline-none border border-slate-700">
-                           <option value="Nilar">🎙️ Nilar (Female)</option>
-                           <option value="Thiha">🎙️ Thiha (Male - Auto Pitch adjustment)</option>
+                           <option value="my-MM-NilarNeural">🎙️ Nilar (Female / နီလာ)</option>
+                           <option value="my-MM-ThihaNeural">🎙️ Thiha (Male / သီဟ)</option>
                          </select>
                       </div>
 
                       <div className="flex gap-4">
                         <div className="flex-1">
                           <div className="flex justify-between items-center mb-2">
-                             <label className="text-xs text-slate-400 font-bold">Speed</label>
+                             <label className="text-xs text-slate-400 font-bold">Speed (Rate)</label>
                              <span className="text-xs font-bold text-pink-400">{ttsRate > 0 ? '+' : ''}{ttsRate}%</span>
                           </div>
                           <input type="range" min="-50" max="50" step="5" value={ttsRate} onChange={(e) => setTtsRate(parseInt(e.target.value))} className="w-full accent-pink-500" />
@@ -619,7 +615,7 @@
                         <div className="flex-1">
                           <div className="flex justify-between items-center mb-2">
                              <label className="text-xs text-slate-400 font-bold">Pitch</label>
-                             <span className="text-xs font-bold text-purple-400">{ttsPitch > 0 ? '+' : ''}{ttsPitch}%</span>
+                             <span className="text-xs font-bold text-purple-400">{ttsPitch > 0 ? '+' : ''}{ttsPitch}Hz</span>
                           </div>
                           <input type="range" min="-50" max="50" step="5" value={ttsPitch} onChange={(e) => setTtsPitch(parseInt(e.target.value))} className="w-full accent-purple-500" />
                         </div>
@@ -630,14 +626,21 @@
                     
                     <button onClick={runTtsGeneration} disabled={isSynthesizing} className="w-full bg-pink-600 hover:bg-pink-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all">
                        {isSynthesizing ? <i className="fa-solid fa-spinner fa-spin text-xl"></i> : <i className="fa-solid fa-play text-xl"></i>}
-                       Generate Audio
+                       Generate Audio (API)
                     </button>
                     
+                    {ttsErrorDetail && <p className="text-sm text-red-400 text-center">{ttsErrorDetail}</p>}
+
                     {synthesizedAudioUrl && (
-                      <div className="mt-4 p-4 bg-slate-950 rounded-xl border border-slate-800">
-                         <audio controls className="w-full" src={synthesizedAudioUrl}></audio>
+                      <div className="mt-4 p-4 bg-slate-950 rounded-xl border border-slate-800 text-center">
+                         <p className="text-xs text-emerald-400 font-bold mb-3">✅ အသံဖန်တီးမှု အောင်မြင်ပါသည်</p>
+                         <audio id="tts-player" controls className="w-full mb-3" src={synthesizedAudioUrl}></audio>
+                         <a href={synthesizedAudioUrl} download="myanmar_tts.mp3" className="inline-block bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-4 py-2 rounded-lg border border-slate-700">
+                           <i className="fa-solid fa-download mr-1"></i> Download MP3
+                         </a>
                       </div>
                     )}
+
                   </div>
                 </div>
               )}
