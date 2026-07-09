@@ -7,13 +7,7 @@
   
   <script>
     window.onerror = function(message, source, lineno, colno, error) {
-      document.body.innerHTML = `
-        <div style="background-color: #450a0a; color: #fca5a5; min-height: 100vh; padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif;">
-          <h1 style="font-size: 2rem; font-weight: bold; color: #ef4444; margin-bottom: 1rem;">🚨 စနစ်ချို့ယွင်းမှု (System Error)</h1>
-          <p style="margin-bottom: 0.5rem; font-size: 1.2rem;">${message}</p>
-          <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 1rem;">Location: Line ${lineno}</p>
-        </div>
-      `;
+      console.error(message);
       return true;
     };
   </script>
@@ -46,43 +40,28 @@
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #020617; color: #818cf8;">
       <i class="fa-solid fa-spinner fa-spin" style="font-size: 3rem; margin-bottom: 1rem;"></i>
       <h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">Workspace ကို ဖွင့်နေပါသည်...</h2>
-      <p style="font-size: 0.75rem; color: #64748b;">Loading Application...</p>
     </div>
   </div>
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // --- React Error Boundary ---
     class ErrorBoundary extends React.Component {
-      constructor(props) {
-        super(props);
-        this.state = { hasError: false, error: null };
-      }
+      constructor(props) { super(props); this.state = { hasError: false, error: null }; }
       static getDerivedStateFromError(error) { return { hasError: true, error }; }
       render() {
-        if (this.state.hasError) {
-          return (
-            <div className="min-h-screen bg-red-950 text-white p-8 flex flex-col items-center justify-center text-center">
-              <i className="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-4"></i>
-              <h1 className="text-2xl font-bold mb-2">React Rendering Error</h1>
-              <p className="text-red-300">{this.state.error?.toString()}</p>
-            </div>
-          );
-        }
+        if (this.state.hasError) return <div className="p-8 text-center text-red-500">Render Error</div>;
         return this.props.children; 
       }
     }
 
-    // --- Sandbox-Safe Memory System ---
-    const memoryStore = {};
-    const safeGetLocal = (key, defaultVal) => { try { return window.localStorage.getItem(key) || memoryStore[key] || defaultVal; } catch(e) { return memoryStore[key] || defaultVal; } };
-    const safeSetLocal = (key, val) => { try { window.localStorage.setItem(key, val); } catch(e) { memoryStore[key] = val; } };
+    const safeGetLocal = (key, defaultVal) => { try { return window.localStorage.getItem(key) || defaultVal; } catch(e) { return defaultVal; } };
+    const safeSetLocal = (key, val) => { try { window.localStorage.setItem(key, val); } catch(e) {} };
     const safeGetSession = (key, defaultVal) => { try { return window.sessionStorage.getItem(key) || defaultVal; } catch(e) { return defaultVal; } };
     const safeSetSession = (key, val) => { try { window.sessionStorage.setItem(key, val); } catch(e) {} };
     const safeRemoveSession = (key) => { try { window.sessionStorage.removeItem(key); } catch(e) {} };
 
-    // --- အစ်ကို့ရဲ့ Firebase Config အသစ် ---
+    // --- Firebase Setup ---
     const firebaseConfig = {
       apiKey: "AIzaSyDRaW1Y_L586Z7NBqiPDUpXa-dVXGvF1QE",
       authDomain: "whlaing-d5c07.firebaseapp.com",
@@ -93,11 +72,9 @@
       measurementId: "G-HHFLLWEW6L"
     };
 
-    let safeAppId = 'whlaing-d5c07';
     let db = null, auth = null;
-    
     try {
-      if (window.firebase) {
+      if (window.firebase && !firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         auth = firebase.auth();
@@ -105,7 +82,6 @@
     } catch (e) { console.warn("Firebase Init Error:", e); }
 
     function App() {
-      // --- Groq Keys (Backup System) ---
       const initialGroqKeys = [
         "gsk_MaUgafpHlKCG7rm4yrWGdybZ3YYajEy9h1UGDgp8slZBaiaHh",
         "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",
@@ -119,7 +95,6 @@
         "gsk_dIG05XBNQZvbwcpWGx9cGWdby3yhh0503VS66l1W4xsucpuWPP"
       ];
 
-      // --- Main States ---
       const [firebaseUser, setFirebaseUser] = useState(null);
       const [userRole, setUserRole] = useState('user');
       const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => safeGetSession('is_admin_auth', 'false') === 'true');
@@ -135,7 +110,6 @@
       const [activeTab, setActiveTab] = useState('transcript');
       const [activeKeyIndex, setActiveKeyIndex] = useState(0);
 
-      // Data States
       const [selectedFile, setSelectedFile] = useState(null);
       const [isProcessing, setIsProcessing] = useState(false);
       const [logs, setLogs] = useState([]);
@@ -145,7 +119,6 @@
       const [translatedText, setTranslatedText] = useState(() => safeGetLocal('stored_translation', ''));
       const [translatedSrtText, setTranslatedSrtText] = useState(() => safeGetLocal('stored_translated_srt', ''));
 
-      // Translation States
       const [targetLang, setTargetLang] = useState('Myanmar');
       const languagesList = [
         { id: 'Myanmar', name: '🇲🇲 မြန်မာ' }, { id: 'English', name: '🇬🇧 အင်္ဂလိပ်' },
@@ -153,9 +126,7 @@
         { id: 'Thai', name: '🇹🇭 ထိုင်း' }, { id: 'Chinese', name: '🇨🇳 တရုတ်' }
       ];
 
-      // TTS States
       const [ttsInput, setTtsInput] = useState('');
-      const [selectedVoice, setSelectedVoice] = useState('my-MM-NilarNeural');
       const [ttsRate, setTtsRate] = useState(0);   
       const [ttsPitch, setTtsPitch] = useState(0); 
       const [isSynthesizing, setIsSynthesizing] = useState(false);
@@ -163,26 +134,17 @@
       const [ttsErrorDetail, setTtsErrorMsg] = useState('');
       const audioRef = useRef(null);
 
-      // API Test States
-      const [isTestingGroq, setIsTestingGroq] = useState(false);
-      const [groqStatus, setGroqStatus] = useState(null);
-      const [isTestingGemini, setIsTestingGemini] = useState(false);
-      const [geminiStatus, setGeminiStatus] = useState(null);
-
       const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
       const [paymentRequests, setPaymentRequests] = useState([]);
-      const [showShareModal, setShowShareModal] = useState(false);
-      const [generatedShareUrl, setGeneratedShareUrl] = useState('');
 
       const showToast = (message, type = 'info') => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
       };
 
-      // --- Firebase Auth & Database Listener ---
       useEffect(() => {
         if (!auth) return;
-        auth.signInAnonymously().catch(e => console.error(e));
+        auth.signInAnonymously().catch(e => console.error("Auth error:", e));
 
         const unsub = auth.onAuthStateChanged(user => {
           if (user) {
@@ -191,29 +153,12 @@
               if (doc.exists) {
                 setUserRole(doc.data().role || 'user');
               } else {
-                db.collection("users").doc(user.uid).set({ role: 'user', createdAt: new Date().toISOString() });
+                db.collection("users").doc(user.uid).set({ role: 'user', createdAt: new Date().toISOString() }).catch(err => console.error("Create user error:", err));
               }
             });
           }
         });
-
-        // Check for Shared links
-        const params = new URLSearchParams(window.location.search);
-        const shareId = params.get('share');
-        if(shareId && db) {
-           db.collection("shares").doc(shareId).get().then(docSnap => {
-               if (docSnap.exists) {
-                   const data = docSnap.data();
-                   if(data.transcript) setTranscriptText(data.transcript);
-                   if(data.segments) setTranscriptSegments(data.segments);
-                   if(data.srt) setSrtText(data.srt);
-                   if(data.translatedText) setTranslatedText(data.translatedText);
-                   if(data.translatedSrt) setTranslatedSrtText(data.translatedSrt);
-                   showToast("မျှဝေထားသော အချက်အလက်များ ဖွင့်ပြီးပါပြီ။", "success");
-               }
-           });
-        }
-        return () => { if(unsub) unsub(); }
+        return () => unsub();
       }, []);
 
       useEffect(() => {
@@ -222,7 +167,7 @@
           const list = [];
           snapshot.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
           setPaymentRequests(list);
-        });
+        }, err => console.error("Fetch payments error:", err));
         return () => unsub();
       }, [firebaseUser]);
 
@@ -234,32 +179,6 @@
         safeSetLocal('stored_translated_srt', translatedSrtText);
       }, [transcriptText, transcriptSegments, srtText, translatedText, translatedSrtText]);
 
-      // --- API Key Tests ---
-      const testGroqKey = async () => {
-        if(!userGroqKey) { showToast("Key အရင်ထည့်ပါ", "warning"); return; }
-        setIsTestingGroq(true); setGroqStatus(null);
-        try {
-          const res = await fetch('https://api.groq.com/openai/v1/models', { headers: { 'Authorization': `Bearer ${userGroqKey}` } });
-          if (res.ok) { setGroqStatus('success'); showToast("✅ Groq Key အလုပ်လုပ်ပါသည်။", "success"); } 
-          else { setGroqStatus('error'); showToast("❌ Groq Key မှားယွင်းနေပါသည်။", "error"); }
-        } catch(e) { setGroqStatus('error'); showToast("Connection Error", "error"); }
-        setIsTestingGroq(false);
-      };
-
-      const testGeminiKey = async () => {
-        if(!userGeminiKey) { showToast("Key အရင်ထည့်ပါ", "warning"); return; }
-        setIsTestingGemini(true); setGeminiStatus(null);
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
-          });
-          if (res.ok) { setGeminiStatus('success'); showToast("✅ Gemini Key အလုပ်လုပ်ပါသည်။", "success"); } 
-          else { setGeminiStatus('error'); showToast("❌ Gemini Key မှားယွင်းနေပါသည်။", "error"); }
-        } catch(e) { setGeminiStatus('error'); showToast("Connection Error", "error"); }
-        setIsTestingGemini(false);
-      };
-
-      // --- Extract Audio Logic ---
       const processAndExtractAudio = async (videoFile) => {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -274,9 +193,21 @@
               bufferSource.connect(offlineCtx.destination);
               bufferSource.start();
               const renderedBuffer = await offlineCtx.startRendering();
-              const wavBlob = encodeWAV(renderedBuffer);
+              
+              const buffer = renderedBuffer.getChannelData(0);
+              const sampleRate = renderedBuffer.sampleRate;
+              const length = buffer.length * 2 + 44;
+              const bufferArray = new ArrayBuffer(length);
+              const view = new DataView(bufferArray);
+              const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+              writeStr(0, 'RIFF'); view.setUint32(4, length - 8, true); writeStr(8, 'WAVE'); writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); writeStr(36, 'data'); view.setUint32(40, length - 44, true);
+              let offset = 44;
+              for (let i = 0; i < buffer.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, buffer[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+              }
               setLogs([`အသံဖိုင် ပြင်ဆင်ပြီးပါပြီ။ 🚀`]);
-              resolve(new File([wavBlob], "audio.wav", { type: "audio/wav" }));
+              resolve(new File([new Blob([view], { type: 'audio/wav' })], "audio.wav", { type: "audio/wav" }));
             } catch (err) { reject(err); }
           };
           reader.onerror = () => reject(new Error("File reading failed"));
@@ -284,23 +215,6 @@
         });
       };
 
-      const encodeWAV = (audioBuffer) => {
-        const buffer = audioBuffer.getChannelData(0);
-        const sampleRate = audioBuffer.sampleRate;
-        const length = buffer.length * 2 + 44;
-        const bufferArray = new ArrayBuffer(length);
-        const view = new DataView(bufferArray);
-        const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
-        writeStr(0, 'RIFF'); view.setUint32(4, length - 8, true); writeStr(8, 'WAVE'); writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); writeStr(36, 'data'); view.setUint32(40, length - 44, true);
-        let offset = 44;
-        for (let i = 0; i < buffer.length; i++, offset += 2) {
-          const s = Math.max(-1, Math.min(1, buffer[i]));
-          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-        }
-        return new Blob([view], { type: 'audio/wav' });
-      };
-
-      // --- Transcribe Action ---
       const runTranscription = async () => {
         if (!selectedFile) { showToast("ဖိုင်ရွေးချယ်ပေးပါ!", "error"); return; }
         setIsProcessing(true); setLogs(["AI စတင် အလုပ်လုပ်နေပါပြီ..."]);
@@ -313,8 +227,7 @@
 
         let success = false, resultText = "", resultSegments = [];
         
-        // Try user key first if available
-        if (userGroqKey && groqStatus !== 'error') {
+        if (userGroqKey) {
           try {
             const formData = new FormData(); formData.append('file', audioFileToSend); formData.append('model', 'whisper-large-v3'); formData.append('response_format', 'verbose_json');
             const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${userGroqKey}` }, body: formData });
@@ -322,7 +235,6 @@
           } catch (err) {}
         }
         
-        // Fallback to built-in keys
         if (!success) {
           let keyIndex = activeKeyIndex;
           for (let i = 0; i < initialGroqKeys.length; i++) {
@@ -337,12 +249,11 @@
         if (success) {
           setTranscriptText(resultText); setTranscriptSegments(resultSegments); showToast("စာသားထုတ်ယူခြင်း အောင်မြင်ပါသည်။", "success"); setLogs(["✅ အောင်မြင်စွာ ပြီးမြောက်ပါပြီ။"]);
         } else {
-          showToast("API Error - ဖိုင်အရွယ်အစား ကြီးလွန်းနေနိုင်ပါသည်။", "warning"); setLogs(["⚠️ ထုတ်ယူ၍ မရပါ။ ကိုယ်ပိုင် Key ကို သုံးကြည့်ပါ။"]);
+          showToast("API Error - ဖိုင်အရွယ်အစား ကြီးလွန်းနေနိုင်ပါသည်။", "error"); setLogs(["⚠️ ထုတ်ယူ၍ မရပါ။ ကိုယ်ပိုင် Key ကို သုံးကြည့်ပါ။"]);
         }
         setIsProcessing(false);
       };
 
-      // --- Generate SRT ---
       const generateSrt = () => {
         if (!transcriptText || transcriptSegments.length === 0) { showToast("စာသားအရင်ထုတ်ပါ!", "error"); return; }
         setIsProcessing(true);
@@ -357,21 +268,18 @@
         }, 500);
       };
 
-      // --- Translate Action ---
       const runTranslation = async (type) => {
         if (!userGeminiKey) { showToast("Settings တွင် Gemini API Key အရင်ထည့်ပါ။", "error"); return; }
         const sourceContent = type === 'srt' ? srtText : transcriptText;
         if (!sourceContent) { showToast("ဘာသာပြန်ရန် စာသားမရှိပါ။", "error"); return; }
 
         setIsProcessing(true);
-        const prompt = type === 'srt' 
-          ? `Translate this SRT file into ${targetLang}. Preserve all numbers and timestamps exactly. Only translate the text. SRT:\n\n${sourceContent}`
-          : `Translate the following text into ${targetLang}:\n\n${sourceContent}`;
+        const prompt = type === 'srt' ? `Translate this SRT file into ${targetLang}. Preserve all numbers and timestamps exactly. Only translate the text. SRT:\n\n${sourceContent}` : `Translate the following text into ${targetLang}:\n\n${sourceContent}`;
         try {
           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
           });
-          if (!res.ok) throw new Error("API Limit");
+          if (!res.ok) throw new Error("API Error");
           const data = await res.json();
           const result = data.candidates?.[0]?.content?.parts?.[0]?.text || "Translation Error.";
           type === 'srt' ? setTranslatedSrtText(result) : setTranslatedText(result);
@@ -380,7 +288,6 @@
         setIsProcessing(false);
       };
 
-      // --- TTS Action ---
       const chunkBurmeseText = (text, maxLength) => {
         const chunks = [];
         let current = text;
@@ -408,7 +315,6 @@
           if (audioRef.current) audioRef.current.pause();
 
           const playbackSpeed = 1.0 + (ttsRate / 100);
-
           const playNextChunk = () => {
             if(currentChunk >= chunks.length) { setIsSynthesizing(false); showToast("အသံဖန်တီးမှု ပြီးဆုံးပါပြီ။", "success"); return; }
             const speechUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=my&client=tw-ob&q=${encodeURIComponent(chunks[currentChunk])}`;
@@ -420,9 +326,7 @@
             audioObj.onended = () => { currentChunk++; playNextChunk(); };
             audioObj.onerror = () => { setTtsErrorMsg(`အသံဖိုင် ဖွင့်၍မရပါ။ အပိုင်း (${currentChunk+1}) တွင် ရပ်တန့်သွားပါသည်။`); currentChunk++; playNextChunk(); };
 
-            audioObj.play().then(() => {
-              if (chunks.length === 1) setSynthesizedAudioUrl(speechUrl);
-            }).catch(err => {
+            audioObj.play().then(() => { if (chunks.length === 1) setSynthesizedAudioUrl(speechUrl); }).catch(err => {
               setTtsErrorMsg("Browser မှ အသံကို တိုက်ရိုက်ဖွင့်ခွင့် ပိတ်ထားပါသည်။ Play ကို ကိုယ်တိုင် နှိပ်ပေးပါ။");
               setIsSynthesizing(false);
             });
@@ -431,46 +335,43 @@
         } catch (err) { setTtsErrorMsg("⚠ Error: " + err.message); setIsSynthesizing(false); }
       };
 
-      // --- Admin & Payments ---
+      // --- Admin & Payments (Fixed Write Actions) ---
       const handlePaymentSubmit = async (e) => {
         e.preventDefault();
-        if (!firebaseUser || !db) return;
+        if (!firebaseUser) { showToast("System Authentication မလုပ်ရသေးပါ။ ခဏစောင့်ပေးပါ။", "error"); return; }
+        if (!db) { showToast("Cloud သို့ ချိတ်ဆက်၍မရပါ။", "error"); return; }
         try {
           await db.collection("payments").doc(firebaseUser.uid).set({
             userId: firebaseUser.uid, transactionId: submittedTxId, status: "Pending", timestamp: new Date().toISOString()
           });
           showToast("Admin ထံ တင်ပြပြီးပါပြီ။", "success"); setShowPaymentModal(false); setSubmittedTxId('');
-        } catch (err) { showToast("တင်ပြမှု မအောင်မြင်ပါ။", "error"); }
+        } catch (err) {
+          console.error("Write error:", err);
+          showToast("တင်ပြမှု မအောင်မြင်ပါ။ Firebase Security Rules ကို စစ်ဆေးပါ။", "error");
+        }
       };
 
       const handleApproveRequest = async (request) => {
         if (!db) return;
         try {
           await db.collection("users").doc(request.userId).update({ role: 'premium' });
-          await db.collection("payments").doc(request.userId).update({ status: 'Approved' });
+          await db.collection("payments").doc(request.id).update({ status: 'Approved' });
           showToast("Premium အတည်ပြုပြီးပါပြီ။", "success");
-        } catch (err) {}
+        } catch (err) { console.error(err); showToast("အတည်ပြု၍ မရပါ။", "error"); }
       };
 
-      const handleRejectRequest = async (id) => { if (!db) return; await db.collection("payments").doc(id).update({ status: 'Rejected' }); };
+      const handleRejectRequest = async (id) => { 
+        if (!db) return; 
+        try {
+          await db.collection("payments").doc(id).update({ status: 'Rejected' }); 
+        } catch (err) { console.error(err); showToast("ပယ်ချ၍ မရပါ။", "error"); }
+      };
 
       const handleAdminLogin = (e) => {
         e.preventDefault();
         if (adminPasswordInput === ADMIN_SECRET_KEY) {
           setIsAdminAuthenticated(true); safeSetSession('is_admin_auth', 'true'); setShowAdminLoginModal(false); setAdminPasswordInput(''); showToast("Admin ဝင်ရောက်ပြီးပါပြီ။", "success");
         } else { showToast("Password မှားယွင်းပါသည်။", "error"); }
-      };
-
-      const generateShareLink = async () => {
-         if(!db) { showToast("Cloud သို့ ချိတ်ဆက်၍မရပါ", "error"); return; }
-         try {
-             const shareId = Math.random().toString(36).substring(2, 10);
-             await db.collection("shares").doc(shareId).set({
-                 transcript: transcriptText, segments: transcriptSegments, srt: srtText, translatedText: translatedText, translatedSrt: translatedSrtText, timestamp: new Date().toISOString()
-             });
-             const url = window.location.href.split('?')[0] + "?share=" + shareId;
-             setGeneratedShareUrl(url); setShowShareModal(true);
-         } catch(e) { showToast("Share error", "error"); }
       };
 
       const copyToClipboard = (text) => {
@@ -490,7 +391,6 @@
 
       return (
         <div className="min-h-screen pb-20 md:pb-8 flex flex-col items-center pt-4 md:pt-10 px-4">
-          
           {toast.show && (
             <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-lg bg-indigo-600 text-white font-semibold text-sm flex items-center gap-2 animate-[fadeIn_0.3s_ease-out]">
               <i className="fa-solid fa-circle-info"></i> {toast.message}
@@ -498,7 +398,6 @@
           )}
 
           <div className="w-full max-w-2xl">
-            {/* Header */}
             <header className="flex justify-between items-center mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 flex items-center gap-2">
@@ -507,9 +406,6 @@
                 <p className="text-xs text-slate-500 font-medium mt-1">AI Workspace Pro</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={generateShareLink} className="glass-card hover:bg-slate-800 text-slate-300 w-10 h-10 rounded-xl flex items-center justify-center transition-colors">
-                  <i className="fa-solid fa-share-nodes text-lg"></i>
-                </button>
                 {userRole !== 'premium' ? (
                   <button onClick={() => setShowPaymentModal(true)} className="bg-gradient-to-r from-amber-500 to-orange-400 text-slate-900 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1 shadow-lg hover:scale-105 transition-all">
                     <i className="fa-solid fa-crown text-base"></i> Upgrade
@@ -531,7 +427,6 @@
               </div>
             </header>
 
-            {/* Navigation Menus */}
             <div className="flex overflow-x-auto gap-3 hide-scrollbar mb-6 pb-2">
               {tabs.map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-lg' : 'glass-card text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>
@@ -540,10 +435,7 @@
               ))}
             </div>
 
-            {/* Workspace Area */}
             <main className="glass-card rounded-3xl p-6 sm:p-8">
-              
-              {/* 1. Transcript */}
               {activeTab === 'transcript' && (
                 <div className="space-y-6">
                   <div className="text-center">
@@ -577,7 +469,6 @@
                 </div>
               )}
 
-              {/* 2. SRT */}
               {activeTab === 'srt' && (
                 <div className="space-y-6">
                   <div className="text-center pb-6 border-b border-slate-800">
@@ -599,7 +490,6 @@
                 </div>
               )}
 
-              {/* 3. Translation */}
               {activeTab === 'translation' && (
                 <div className="space-y-6">
                   <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-slate-800 pb-6">
@@ -624,7 +514,6 @@
                 </div>
               )}
 
-              {/* 4. TTS */}
               {activeTab === 'tts' && (
                 <div className="space-y-6 relative">
                   {userRole !== 'premium' && (
@@ -665,7 +554,6 @@
                 </div>
               )}
 
-              {/* 5. Settings */}
               {activeTab === 'settings' && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 mb-6">
@@ -677,25 +565,18 @@
                     <label className="text-sm font-bold text-slate-300 block mb-3">Groq API Key (Optional / For large files)</label>
                     <div className="flex gap-2">
                        <input type="password" value={userGroqKey} onChange={(e) => { setUserGroqKey(e.target.value); safeSetLocal('user_groq_api_key', e.target.value); }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white text-xs" placeholder="gsk_..." />
-                       <button onClick={testGroqKey} className="bg-indigo-600 hover:bg-indigo-500 px-4 rounded-xl font-bold text-xs whitespace-nowrap">စစ်ဆေးမည်</button>
                     </div>
-                    {groqStatus === 'success' && <p className="text-[10px] text-emerald-400 mt-2">✅ Key အလုပ်လုပ်ပါသည်။</p>}
-                    {groqStatus === 'error' && <p className="text-[10px] text-red-400 mt-2">❌ Key မှားယွင်းနေပါသည်။</p>}
                   </div>
                   
                   <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
                     <label className="text-sm font-bold text-slate-300 block mb-3">Gemini API Key (Required for Translate)</label>
                     <div className="flex gap-2">
                        <input type="password" value={userGeminiKey} onChange={(e) => { setUserGeminiKey(e.target.value); safeSetLocal('gemini_api_key', e.target.value); }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white text-xs" placeholder="AIzaSy..." />
-                       <button onClick={testGeminiKey} className="bg-blue-600 hover:bg-blue-500 px-4 rounded-xl font-bold text-xs whitespace-nowrap">စစ်ဆေးမည်</button>
                     </div>
-                    {geminiStatus === 'success' && <p className="text-[10px] text-emerald-400 mt-2">✅ Key အလုပ်လုပ်ပါသည်။</p>}
-                    {geminiStatus === 'error' && <p className="text-[10px] text-red-400 mt-2">❌ Key မှားယွင်းနေပါသည်။</p>}
                   </div>
                 </div>
               )}
 
-              {/* 6. Admin Panel */}
               {activeTab === 'admin' && isAdminAuthenticated && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 mb-6">
@@ -724,31 +605,27 @@
             </main>
           </div>
 
-          {/* --- Modals --- */}
-          {showShareModal && (
-            <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
-              <div className="glass-card w-full max-w-sm rounded-3xl p-8 relative text-center">
-                <button onClick={() => setShowShareModal(false)} className="absolute top-5 right-5 text-slate-500 hover:text-white w-8 h-8"><i className="fa-solid fa-xmark"></i></button>
-                <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4"><i className="fa-solid fa-share-nodes text-2xl"></i></div>
-                <h3 className="text-lg font-bold text-white mb-2">Share Workspace</h3>
-                <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl mb-6 font-mono text-[11px] text-slate-300 break-all">{generatedShareUrl}</div>
-                <button onClick={() => copyToClipboard(generatedShareUrl)} className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl"><i className="fa-solid fa-copy text-lg"></i> Copy Link</button>
-              </div>
-            </div>
-          )}
-
           {showPaymentModal && (
             <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
               <div className="glass-card w-full max-w-sm rounded-3xl p-6 relative">
-                <button onClick={() => setShowPaymentModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white w-8 h-8"><i className="fa-solid fa-xmark"></i></button>
+                <button onClick={() => setShowPaymentModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white w-8 h-8 flex items-center justify-center bg-slate-900 rounded-full"><i className="fa-solid fa-xmark"></i></button>
                 <div className="text-center mb-6 pt-2">
                   <h3 className="text-xl font-bold text-amber-400 mb-2">Go Premium</h3>
                   <div className="bg-slate-950 inline-block px-5 py-2.5 rounded-2xl border border-slate-800"><span className="text-white text-lg font-bold">၁ လ - ၁၀,၀၀၀ ကျပ်</span></div>
                 </div>
+                
+                {/* --- Added QR Codes Back --- */}
                 <div className="flex gap-4 mb-6">
-                   <div className="flex-1 bg-white p-2 rounded-2xl text-center"><p className="text-black font-extrabold text-[12px] mt-2 mb-2">KBZ Pay: 0912345678</p></div>
-                   <div className="flex-1 bg-white p-2 rounded-2xl text-center"><p className="text-black font-extrabold text-[12px] mt-2 mb-2">Wave Pay: 0912345678</p></div>
+                   <div className="flex-1 bg-white p-2 rounded-2xl text-center shadow-lg">
+                      <img src="https://i.postimg.cc/zLrJ2JT5/IMG-20260702-083712-916.jpg" className="w-full h-auto rounded-lg object-contain" alt="KBZ Pay" />
+                      <p className="text-black font-extrabold text-[10px] mt-2">KBZ Pay</p>
+                   </div>
+                   <div className="flex-1 bg-white p-2 rounded-2xl text-center shadow-lg">
+                      <img src="https://i.postimg.cc/Ty6RNRnx/IMG-20260702-083717-243.jpg" className="w-full h-auto rounded-lg object-contain" alt="Wave Pay" />
+                      <p className="text-black font-extrabold text-[10px] mt-2">Wave Pay</p>
+                   </div>
                 </div>
+
                 <form onSubmit={handlePaymentSubmit} className="space-y-5">
                   <div>
                     <label className="text-xs text-slate-400 font-bold mb-2 block text-center">Transaction ID (နောက်ဆုံး ၆ လုံး)</label>
