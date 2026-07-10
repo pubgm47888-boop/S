@@ -5,16 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeepLearn AI Workspace</title>
   
-  <script>
-    window.onerror = function(message) { console.error(message); return true; };
-  </script>
-
+  <script>window.onerror = function(message) { console.error(message); return true; };</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app-compat.min.js"></script>
@@ -55,8 +50,7 @@
       projectId: "whlaing-d5c07",
       storageBucket: "whlaing-d5c07.firebasestorage.app",
       messagingSenderId: "824820035764",
-      appId: "1:824820035764:web:8ad8bffe7ce77f4c3027e1",
-      measurementId: "G-HHFLLWEW6L"
+      appId: "1:824820035764:web:8ad8bffe7ce77f4c3027e1"
     };
 
     let db = null, auth = null;
@@ -90,7 +84,7 @@
       
       const [showPaymentModal, setShowPaymentModal] = useState(false);
       const [submittedTxId, setSubmittedTxId] = useState('');
-      const [activeTab, setActiveTab] = useState('tts'); // Default set to TTS for easy testing
+      const [activeTab, setActiveTab] = useState('tts');
       const [activeKeyIndex, setActiveKeyIndex] = useState(0);
 
       const [selectedFile, setSelectedFile] = useState(null);
@@ -109,7 +103,7 @@
         { id: 'Thai', name: '🇹🇭 ထိုင်း' }, { id: 'Chinese', name: '🇨🇳 တရုတ်' }
       ];
 
-      // --- NEW: Flask Backend Edge-TTS States ---
+      // --- Backend API Edge-TTS States ---
       const [ttsInput, setTtsInput] = useState('');
       const [selectedVoice, setSelectedVoice] = useState('my-MM-NilarNeural');
       const [ttsRate, setTtsRate] = useState(0);   
@@ -126,11 +120,10 @@
         setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
       };
 
-      // --- Auth & Database Listener ---
+      // --- Auth & Database ---
       useEffect(() => {
         if (!auth) return;
-        auth.signInAnonymously().catch(e => console.warn("Anonymous Auth Warning:", e));
-        
+        auth.signInAnonymously().catch(e => {});
         const unsub = auth.onAuthStateChanged(user => {
           if (user) {
             setFirebaseUser(user);
@@ -140,8 +133,6 @@
                 else { db.collection("users").doc(user.uid).set({ role: 'user', createdAt: new Date().toISOString() }); }
               });
             }
-          } else {
-            setFirebaseUser(null);
           }
         });
         return () => unsub();
@@ -242,18 +233,15 @@
         if (!selectedFile) { showToast("ဖိုင်ရွေးချယ်ပေးပါ!", "error"); return; }
         if (userGroqKey && groqStatus === 'error') { showToast("Groq API Key မှားယွင်းနေပါသည်။", "error"); return; }
 
-        setIsProcessing(true); 
-        setLogs(["AI စတင် အလုပ်လုပ်နေပါပြီ..."]);
-        
+        setIsProcessing(true); setLogs(["AI စတင် အလုပ်လုပ်နေပါပြီ..."]);
         let audioFileToSend = selectedFile;
         
         if (selectedFile.type.startsWith('video/') || selectedFile.name.match(/\.(mp4|mkv|mov|avi)$/i)) {
           try { 
             audioFileToSend = await processAndExtractAudio(selectedFile); 
           } catch (err) { 
-            setLogs(["ဗီဒီယိုမှ အသံထုတ်ယူခြင်း မအောင်မြင်ပါ။ ဖုန်း Memory မလုံလောက်ခြင်း ဖြစ်နိုင်ပါသည်။"]); 
-            setIsProcessing(false); 
-            return; 
+            setLogs(["ဗီဒီယိုမှ အသံထုတ်ယူခြင်း မအောင်မြင်ပါ။"]); 
+            setIsProcessing(false); return; 
           }
         }
 
@@ -285,7 +273,7 @@
         if (success) {
           setTranscriptText(resultText); setTranscriptSegments(resultSegments); showToast("စာသားထုတ်ယူခြင်း အောင်မြင်ပါသည်။", "success"); setLogs(["✅ အောင်မြင်စွာ ပြီးမြောက်ပါပြီ။"]);
         } else {
-          showToast("API Error - ဖိုင်အရွယ်အစား ကြီးလွန်းနေနိုင်ပါသည်။", "error"); setLogs(["⚠️ ထုတ်ယူ၍ မရပါ။ ဖိုင်အရွယ်အစား လျှော့ချကြည့်ပါ။"]);
+          showToast("API Error - ဖိုင်အရွယ်အစား ကြီးလွန်းနေနိုင်ပါသည်။", "error"); setLogs(["⚠️ ထုတ်ယူ၍ မရပါ။"]);
         }
         setIsProcessing(false);
       };
@@ -307,7 +295,6 @@
       // --- Translation ---
       const runTranslation = async (type) => {
         if (!userGeminiKey) { showToast("Gemini API Key အရင်ထည့်ပါ။", "error"); return; }
-
         const sourceContent = type === 'srt' ? srtText : transcriptText;
         if (!sourceContent.trim()) { showToast("ဘာသာပြန်ရန် မူရင်းစာသား မရှိပါ။ စာသားအရင်ထည့်ပါ။", "error"); return; }
 
@@ -326,8 +313,7 @@
         setIsProcessing(false);
       };
 
-
-      // --- NEW: Python Backend (Edge-TTS) Connection ---
+      // --- PYTHON FLASK EDGE-TTS CONNECTION ---
       const runTtsGeneration = async () => {
         if (userRole !== 'premium') { showToast("Premium ဖြင့်သာ သုံးနိုင်ပါသည်။", "error"); return; }
         const text = ttsInput.trim();
@@ -341,8 +327,8 @@
         if (existingPlayer) existingPlayer.pause();
 
         try {
-          // Send request to your Flask backend `/generate` endpoint
-          const response = await fetch('/generate', {
+          // Vercel Serverless Function သို့ လှမ်းခေါ်ခြင်း
+          const response = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -355,17 +341,15 @@
 
           if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || "Server error (TTS engine offline)");
+            throw new Error(errData.error || "API ချိတ်ဆက်၍မရပါ။ Vercel တွင် api Folder ကို သေချာတင်ထားရန်လိုသည်။");
           }
 
-          // Receive MP3 Blob and create URL
           const blob = await response.blob();
           const audioUrl = URL.createObjectURL(blob);
           
           setSynthesizedAudioUrl(audioUrl);
           showToast("အသံဖန်တီးမှု အောင်မြင်ပါသည်။", "success");
           
-          // Auto-play the generated audio
           setTimeout(() => {
              const player = document.getElementById("tts-player");
              if (player) player.play();
@@ -378,26 +362,19 @@
         }
       };
 
-
       // --- Admin Actions ---
       const handlePaymentSubmit = async (e) => {
         e.preventDefault();
-        
-        if (!db) { 
-           showToast("Database နှင့် ချိတ်ဆက်၍မရပါ။", "error"); 
-           return; 
-        }
+        if (!db) { showToast("Database နှင့် ချိတ်ဆက်၍မရပါ။", "error"); return; }
 
         let currentUser = firebaseUser;
-        
         if (!currentUser) {
            try {
              const cred = await auth.signInAnonymously();
              currentUser = cred.user;
              setFirebaseUser(currentUser);
            } catch (err) {
-             showToast("Firebase တွင် Anonymous Auth ဖွင့်ထားရန် လိုအပ်ပါသည်။", "error");
-             return;
+             showToast("Firebase Auth Error", "error"); return;
            }
         }
 
@@ -405,12 +382,8 @@
           await db.collection("payments").doc(currentUser.uid).set({
             userId: currentUser.uid, transactionId: submittedTxId, status: "Pending", timestamp: new Date().toISOString()
           });
-          showToast("အောင်မြင်စွာ တင်ပြပြီးပါပြီ။", "success"); 
-          setShowPaymentModal(false); 
-          setSubmittedTxId('');
-        } catch (err) { 
-          showToast("တင်ပြမှု မအောင်မြင်ပါ။", "error"); 
-        }
+          showToast("အောင်မြင်စွာ တင်ပြပြီးပါပြီ။", "success"); setShowPaymentModal(false); setSubmittedTxId('');
+        } catch (err) { showToast("တင်ပြမှု မအောင်မြင်ပါ။", "error"); }
       };
 
       const handleApproveRequest = async (request) => {
@@ -424,7 +397,7 @@
 
       const handleRejectRequest = async (id) => { 
         if (!db) return; 
-        try { await db.collection("payments").doc(id).update({ status: 'Rejected' }); } catch (err) { showToast("Error", "error"); }
+        try { await db.collection("payments").doc(id).update({ status: 'Rejected' }); } catch (err) {}
       };
 
       const handleAdminLogin = (e) => {
@@ -563,9 +536,7 @@
                     <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4">
                       <label className="text-xs font-bold text-slate-400 block mb-2">မူရင်းစာသား (Source Text)</label>
                       <textarea rows="3" value={transcriptText} onChange={(e) => setTranscriptText(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 mb-2" placeholder="ဘာသာပြန်မည့် စာသားကို ဤနေရာတွင် ထည့်ပါ..." />
-                      
                       <button onClick={() => runTranslation('transcript')} disabled={isProcessing} className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 py-3 rounded-xl font-bold mb-3 text-sm">စာသားကို ဘာသာပြန်မည်</button>
-                      
                       <label className="text-xs font-bold text-emerald-400 block mb-2">ဘာသာပြန်ထားသောစာသား (Result)</label>
                       <textarea rows="4" value={translatedText} onChange={(e) => setTranslatedText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-slate-300" placeholder="Translated text..." />
                     </div>
@@ -573,9 +544,7 @@
                     <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4">
                       <label className="text-xs font-bold text-slate-400 block mb-2">မူရင်း SRT (Source SRT)</label>
                       <textarea rows="3" value={srtText} onChange={(e) => setSrtText(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 mb-2" placeholder="ဘာသာပြန်မည့် SRT စာသားကို ဤနေရာတွင် ထည့်ပါ..." />
-
                       <button onClick={() => runTranslation('srt')} disabled={isProcessing} className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 py-3 rounded-xl font-bold mb-3 text-sm">SRT ကို ဘာသာပြန်မည်</button>
-                      
                       <label className="text-xs font-bold text-emerald-400 block mb-2">ဘာသာပြန်ထားသော SRT (Result)</label>
                       <textarea rows="4" value={translatedSrtText} onChange={(e) => setTranslatedSrtText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300" placeholder="Translated SRT..." />
                     </div>
@@ -629,7 +598,7 @@
                        Generate Audio (API)
                     </button>
                     
-                    {ttsErrorDetail && <p className="text-sm text-red-400 text-center">{ttsErrorDetail}</p>}
+                    {ttsErrorDetail && <p className="text-sm text-red-400 text-center font-bold bg-red-500/10 p-3 rounded-lg border border-red-500/20">{ttsErrorDetail}</p>}
 
                     {synthesizedAudioUrl && (
                       <div className="mt-4 p-4 bg-slate-950 rounded-xl border border-slate-800 text-center">
@@ -668,6 +637,7 @@
             </main>
           </div>
 
+          {/* PAYMENT MODAL */}
           {showPaymentModal && (
             <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
               <div className="glass-card w-full max-w-sm rounded-3xl p-6 relative">
@@ -691,6 +661,7 @@
             </div>
           )}
 
+          {/* ADMIN MODAL */}
           {showAdminLoginModal && (
             <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
               <div className="glass-card w-full max-w-xs rounded-3xl p-8 relative text-center">
