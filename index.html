@@ -12,6 +12,10 @@
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-auth-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore-compat.min.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
     body {
@@ -48,27 +52,78 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // 10 Myanmar TTS voice presets.
-    // NOTE: Microsoft/Edge neural TTS currently only ships two real Myanmar voices
-    // (Nilar = female, Thiha = male). To give 10 distinct-feeling options without
-    // pretending fake voices exist, each of the two real voices is paired with
-    // 5 curated speed/pitch styles. Users can still fine-tune with the sliders.
+    // 14 TTS voice options.
+    // NOTE: only v1 (Thiha) and v2 (Nilar) are genuine Myanmar-language neural
+    // voices. v3-v14 are multilingual neural voices from other languages that
+    // can also read Myanmar text aloud with a different accent/timbre — useful
+    // for variety, but they are NOT Myanmar voices and are labeled generically
+    // below (Voice 3, Voice 4, ...) rather than given real people's names, since
+    // labeling a synthetic voice with a real, identifiable person's name would
+    // misrepresent whose voice it actually is.
+    const VOICE_MAP = {
+      v1:  "my-MM-ThihaNeural",
+      v2:  "my-MM-NilarNeural",
+      v3:  "it-IT-GiuseppeMultilingualNeural",
+      v4:  "en-AU-WilliamMultilingualNeural",
+      v5:  "en-US-AndrewMultilingualNeural",
+      v6:  "en-US-AvaMultilingualNeural",
+      v7:  "en-US-BrianMultilingualNeural",
+      v8:  "en-US-EmmaMultilingualNeural",
+      v9:  "fr-FR-RemyMultilingualNeural",
+      v10: "fr-FR-VivienneMultilingualNeural",
+      v11: "de-DE-SeraphinaMultilingualNeural",
+      v12: "de-DE-FlorianMultilingualNeural",
+      v13: "pt-BR-ThalitaMultilingualNeural",
+      v14: "ko-KR-HyunsuMultilingualNeural",
+    };
+
     const VOICE_PRESETS = [
-      { id: 'nilar-normal',   voice: 'my-MM-NilarNeural', label: 'နီလာ - ပုံမှန်',      rate: 0,   pitch: 0 },
-      { id: 'nilar-slow',     voice: 'my-MM-NilarNeural', label: 'နီလာ - နှေးနှေးလေး',   rate: -20, pitch: -10 },
-      { id: 'nilar-fast',     voice: 'my-MM-NilarNeural', label: 'နီလာ - မြန်မြန်',      rate: 20,  pitch: 5 },
-      { id: 'nilar-warm',     voice: 'my-MM-NilarNeural', label: 'နီလာ - နူးညံ့',       rate: -10, pitch: -5 },
-      { id: 'nilar-energetic',voice: 'my-MM-NilarNeural', label: 'နီလာ - တက်ကြွ',       rate: 15,  pitch: 15 },
-      { id: 'thiha-normal',   voice: 'my-MM-ThihaNeural', label: 'သီဟ - ပုံမှန်',       rate: 0,   pitch: 0 },
-      { id: 'thiha-slow',     voice: 'my-MM-ThihaNeural', label: 'သီဟ - နှေးနှေးလေး',    rate: -20, pitch: -10 },
-      { id: 'thiha-fast',     voice: 'my-MM-ThihaNeural', label: 'သီဟ - မြန်မြန်',       rate: 20,  pitch: 5 },
-      { id: 'thiha-deep',     voice: 'my-MM-ThihaNeural', label: 'သီဟ - နက်နက်ရှိုင်းရှိုင်း', rate: -10, pitch: -20 },
-      { id: 'thiha-energetic',voice: 'my-MM-ThihaNeural', label: 'သီဟ - တက်ကြွ',        rate: 15,  pitch: 15 },
+      { id: 'v1',  voice: VOICE_MAP.v1,  label: 'Voice 1 - မြန်မာ (ယောက်ျား)',      rate: 0, pitch: 0 },
+      { id: 'v2',  voice: VOICE_MAP.v2,  label: 'Voice 2 - မြန်မာ (မိန်းမ)',        rate: 0, pitch: 0 },
+      { id: 'v3',  voice: VOICE_MAP.v3,  label: 'Voice 3 - ယောက်ျား (နူးညံ့)',      rate: 0, pitch: 0 },
+      { id: 'v4',  voice: VOICE_MAP.v4,  label: 'Voice 4 - ယောက်ျား (ခိုင်မာ)',      rate: 0, pitch: 0 },
+      { id: 'v5',  voice: VOICE_MAP.v5,  label: 'Voice 5 - ယောက်ျား (ပုံမှန်)',      rate: 0, pitch: 0 },
+      { id: 'v6',  voice: VOICE_MAP.v6,  label: 'Voice 6 - မိန်းမ (တက်ကြွ)',        rate: 0, pitch: 0 },
+      { id: 'v7',  voice: VOICE_MAP.v7,  label: 'Voice 7 - ယောက်ျား (နက်ရှိုင်း)',   rate: 0, pitch: 0 },
+      { id: 'v8',  voice: VOICE_MAP.v8,  label: 'Voice 8 - မိန်းမ (ပွင့်လင်း)',      rate: 0, pitch: 0 },
+      { id: 'v9',  voice: VOICE_MAP.v9,  label: 'Voice 9 - ယောက်ျား (နူးညံ့)',      rate: 0, pitch: 0 },
+      { id: 'v10', voice: VOICE_MAP.v10, label: 'Voice 10 - မိန်းမ (ချိုမြိန်)',     rate: 0, pitch: 0 },
+      { id: 'v11', voice: VOICE_MAP.v11, label: 'Voice 11 - မိန်းမ (ပရိုဖက်ရှင်နယ်)', rate: 0, pitch: 0 },
+      { id: 'v12', voice: VOICE_MAP.v12, label: 'Voice 12 - ယောက်ျား (တည်ငြိမ်)',    rate: 0, pitch: 0 },
+      { id: 'v13', voice: VOICE_MAP.v13, label: 'Voice 13 - မိန်းမ (နွေးထွေး)',      rate: 0, pitch: 0 },
+      { id: 'v14', voice: VOICE_MAP.v14, label: 'Voice 14 - ယောက်ျား (ချောမွေ့)',    rate: 0, pitch: 0 },
     ];
+
+    // --- Firebase Setup (used only to host shared system API keys) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyDRaW1Y_L586Z7NBqiPDUpXa-dVXGvF1QE",
+      authDomain: "whlaing-d5c07.firebaseapp.com",
+      projectId: "whlaing-d5c07",
+      storageBucket: "whlaing-d5c07.firebasestorage.app",
+      messagingSenderId: "824820035764",
+      appId: "1:824820035764:web:8ad8bffe7ce77f4c3027e1"
+    };
+    let db = null, auth = null;
+    try {
+      if (window.firebase && !firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+      }
+    } catch (e) {}
 
     function App() {
       const [userGeminiKey, setUserGeminiKey] = useState('');
       const [userGroqKey, setUserGroqKey] = useState('');
+      const [systemGroqKeys, setSystemGroqKeys] = useState([]);
+      const [systemGroqKeysInput, setSystemGroqKeysInput] = useState('');
+      const [currentGroqKeyIndex, setCurrentGroqKeyIndex] = useState(0);
+      const [systemGeminiKey, setSystemGeminiKey] = useState('');
+
+      const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+      const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
+      const [adminPasswordInput, setAdminPasswordInput] = useState('');
+
       const [activeTab, setActiveTab] = useState('transcript');
 
       const [selectedFile, setSelectedFile] = useState(null);
@@ -83,9 +138,6 @@
       const [translatedSrtText, setTranslatedSrtText] = useState('');
       const [translateTextProgress, setTranslateTextProgress] = useState(0);
       const [translateSrtProgress, setTranslateSrtProgress] = useState(0);
-
-      const [targetLang, setTargetLang] = useState('Myanmar');
-      const languagesList = [{ id: 'Myanmar', name: '🇲🇲 မြန်မာ' }, { id: 'English', name: '🇬🇧 အင်္ဂလိပ်' }];
 
       const [ttsInput, setTtsInput] = useState('');
       const [selectedPreset, setSelectedPreset] = useState(VOICE_PRESETS[0].id);
@@ -108,6 +160,40 @@
         const p = VOICE_PRESETS.find(v => v.id === selectedPreset);
         if (p) { setTtsRate(p.rate); setTtsPitch(p.pitch); }
       }, [selectedPreset]);
+
+      // Load shared system API keys so people without their own key can still use the app
+      useEffect(() => {
+        if (!auth || !db) return;
+        auth.signInAnonymously().catch(() => {});
+        const unsub = db.collection("settings").doc("api_keys").onSnapshot(doc => {
+          if (doc.exists) {
+            const data = doc.data();
+            setSystemGeminiKey(data.geminiKey || '');
+            setSystemGroqKeys(data.groqKeys || []);
+            setSystemGroqKeysInput((data.groqKeys || []).join('\n'));
+          }
+        }, () => {});
+        return () => unsub();
+      }, []);
+
+      const handleAdminLogin = (e) => {
+        e.preventDefault();
+        if (adminPasswordInput === "111") {
+          setIsAdminAuthenticated(true);
+          setShowAdminLoginModal(false);
+          setAdminPasswordInput('');
+          showToast("Admin ဝင်ရောက်ပြီးပါပြီ။", "success");
+        } else { showToast("Password မှားယွင်းပါသည်။", "error"); }
+      };
+
+      const saveSystemKeys = async () => {
+        if (!db) { showToast("Cloud connection မရှိပါ", "error"); return; }
+        const groqArray = systemGroqKeysInput.split('\n').map(k => k.trim()).filter(k => k.length > 0);
+        try {
+          await db.collection("settings").doc("api_keys").set({ geminiKey: systemGeminiKey, groqKeys: groqArray }, { merge: true });
+          showToast("System API Keys များ သိမ်းဆည်းပြီးပါပြီ", "success");
+        } catch (e) { showToast("သိမ်းဆည်း၍ မရပါ", "error"); }
+      };
 
       // Simple fake-but-honest progress ticker while a real request is in flight.
       // Climbs to 90% smoothly, then the caller jumps it to 100% on completion.
@@ -187,10 +273,21 @@
       // --- Transcription ---
       const runTranscription = async () => {
         if (!selectedFile) { showToast("ဖိုင်ရွေးချယ်ပေးပါ!", "error"); return; }
-        if (!userGroqKey) { showToast("Settings တွင် Groq API Key အရင်ထည့်ပါ", "error"); return; }
+
+        let activeKey = userGroqKey;
+        let useSystemKeys = false;
+        if (!activeKey) {
+          if (systemGroqKeys && systemGroqKeys.length > 0) {
+            activeKey = systemGroqKeys[currentGroqKeyIndex % systemGroqKeys.length];
+            useSystemKeys = true;
+          } else {
+            showToast("System API Key မရှိပါ။ Admin မှထည့်ပေးရန် (သို့) Settings တွင် ကိုယ်ပိုင် Key ထည့်ပေးရန် လိုအပ်ပါသည်။", "error");
+            return;
+          }
+        }
 
         setIsProcessing(true);
-        setLogs(["ကိုယ်ပိုင် Key ဖြင့် စတင်နေပါသည်..."]);
+        setLogs([useSystemKeys ? "System Key ဖြင့် စတင်နေပါသည်..." : "ကိုယ်ပိုင် Key ဖြင့် စတင်နေပါသည်..."]);
 
         try {
           await runWithProgress(setTranscribeProgress, async () => {
@@ -206,15 +303,19 @@
             setLogs(["AI Server သို့ ပေးပို့နေပါသည်..."]);
             const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
               method: 'POST',
-              headers: { 'Authorization': `Bearer ${userGroqKey}` },
+              headers: { 'Authorization': `Bearer ${activeKey}` },
               body: formData
             });
-            if (!res.ok) throw new Error("API Error");
+            if (!res.ok) {
+              if (useSystemKeys) setCurrentGroqKeyIndex(prev => prev + 1);
+              throw new Error("API Error");
+            }
             const data = await res.json();
             setTranscriptText(data.text);
             setTranscriptSegments(data.segments || []);
             showToast("စာသားထုတ်ယူခြင်း အောင်မြင်ပါသည်။", "success");
             setLogs(["✅ အောင်မြင်စွာ ပြီးမြောက်ပါပြီ။"]);
+            if (useSystemKeys) setCurrentGroqKeyIndex(prev => prev + 1);
           });
         } catch (err) {
           showToast("API Limit (သို့) Connection Error", "error");
@@ -241,19 +342,21 @@
       };
 
       const runTranslation = async (type) => {
-        if (!userGeminiKey) { showToast("Settings တွင် Gemini API Key အရင်ထည့်ပါ", "error"); return; }
+        const activeKey = userGeminiKey || systemGeminiKey;
+        if (!activeKey) { showToast("System Key မရှိပါ။ Settings တွင် ကိုယ်ပိုင် Gemini Key ထည့်ပါ", "error"); return; }
         const sourceContent = type === 'srt' ? srtText : transcriptText;
         if (!sourceContent.trim()) { showToast("ဘာသာပြန်ရန် စာသားအရင်ထည့်ပါ။", "error"); return; }
 
         setIsProcessing(true);
         const progressSetter = type === 'srt' ? setTranslateSrtProgress : setTranslateTextProgress;
+        const langRule = "Translate into natural, everyday Burmese (Myanmar) only. Output must be written strictly in Myanmar (Burmese) Unicode script. Do NOT include any Chinese characters, Chinese words, or any other language mixed in the output — Myanmar text only, no exceptions.";
         const prompt = type === 'srt'
-          ? `Translate this SRT file into ${targetLang}. Preserve all numbers and timestamps exactly. Only translate the text. SRT:\n\n${sourceContent}`
-          : `Translate the following text into ${targetLang}:\n\n${sourceContent}`;
+          ? `${langRule} This is an SRT file. Preserve all numbers and timestamps exactly, only translate the caption text. SRT:\n\n${sourceContent}`
+          : `${langRule}\n\nText to translate:\n\n${sourceContent}`;
 
         try {
           await runWithProgress(progressSetter, async () => {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
             if (!res.ok) throw new Error("API Error");
@@ -305,6 +408,7 @@
         { id: 'translation', icon: 'fa-language', label: 'Translate' },
         { id: 'tts', icon: 'fa-volume-high', label: 'အသံထွက် (TTS)' }
       ];
+      if (isAdminAuthenticated) tabs.push({ id: 'admin', icon: 'fa-shield-halved', label: 'Admin' });
 
       const ProgressBar = ({ value }) => {
         if (!value) return null;
@@ -339,9 +443,20 @@
                   <p className="text-xs text-purple-300 font-medium mt-0.5">အားလုံး အခမဲ့ Workspace</p>
                 </div>
               </div>
-              <span className="glass-card gold-text font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1">
-                <i className="fa-solid fa-champagne-glasses"></i> အားလုံး Free
-              </span>
+              <div className="flex gap-2">
+                <span className="glass-card gold-text font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1">
+                  <i className="fa-solid fa-champagne-glasses"></i> အားလုံး Free
+                </span>
+                {!isAdminAuthenticated ? (
+                  <button onClick={() => setShowAdminLoginModal(true)} className="glass-card hover:bg-purple-900/40 text-purple-300 w-10 h-10 rounded-xl flex items-center justify-center">
+                    <i className="fa-solid fa-lock text-lg"></i>
+                  </button>
+                ) : (
+                  <button onClick={() => setIsAdminAuthenticated(false)} className="bg-red-500/10 text-red-400 border border-red-500/20 w-10 h-10 rounded-xl flex items-center justify-center">
+                    <i className="fa-solid fa-right-from-bracket text-lg"></i>
+                  </button>
+                )}
+              </div>
             </header>
 
             <div className="flex overflow-x-auto gap-3 hide-scrollbar mb-6 pb-2">
@@ -368,13 +483,13 @@
                   <div className="bg-black/30 border border-purple-500/20 p-5 rounded-xl shadow-inner">
                     <label className="text-xs font-bold text-purple-200 block mb-2"><i className="fa-solid fa-key mr-2 gold-text"></i>Groq API Key (Transcription အတွက်)</label>
                     <input type="password" value={userGroqKey} onChange={(e) => setUserGroqKey(e.target.value)} className="w-full bg-black/40 border border-purple-500/30 rounded-lg p-3 text-white text-xs mb-2 input-focus-ring outline-none transition-all" placeholder="gsk_..." />
-                    <p className="text-[10px] text-purple-400">Extract Text feature အတွက် လိုအပ်ပါသည်။</p>
+                    <p className="text-[10px] text-purple-400">မထည့်ထားပါက Admin ထည့်ထားသော shared Key ကို အလိုအလျောက် သုံးမည်။</p>
                   </div>
 
                   <div className="bg-black/30 border border-purple-500/20 p-5 rounded-xl shadow-inner">
                     <label className="text-xs font-bold text-purple-200 block mb-2"><i className="fa-solid fa-robot mr-2 gold-text"></i>Gemini API Key (ဘာသာပြန်ရန်)</label>
                     <input type="password" value={userGeminiKey} onChange={(e) => setUserGeminiKey(e.target.value)} className="w-full bg-black/40 border border-purple-500/30 rounded-lg p-3 text-white text-xs mb-2 input-focus-ring outline-none transition-all" placeholder="AIzaSy..." />
-                    <p className="text-[10px] text-purple-400">Translate feature အတွက် လိုအပ်ပါသည်။</p>
+                    <p className="text-[10px] text-purple-400">မထည့်ထားပါက Admin ထည့်ထားသော shared Key ကို အလိုအလျောက် သုံးမည်။</p>
                   </div>
 
                   <div className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl text-[11px] text-amber-200/80">
@@ -437,9 +552,7 @@
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold gold-text"><i className="fa-solid fa-language mr-2"></i>AI Translator</h2>
-                    <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)} className="bg-black/30 border border-purple-500/30 py-2 px-3 rounded-xl text-white text-sm outline-none focus:border-amber-500">
-                      {languagesList.map(lang => <option key={lang.id} value={lang.id}>{lang.name}</option>)}
-                    </select>
+                    <span className="bg-black/30 border border-purple-500/30 py-2 px-3 rounded-xl text-white text-sm">🇲🇲 မြန်မာသို့သာ</span>
                   </div>
 
                   <div className="space-y-4">
@@ -524,8 +637,58 @@
                 </div>
               )}
 
+              {/* ADMIN TAB */}
+              {activeTab === 'admin' && isAdminAuthenticated && (
+                <div className="space-y-6">
+                  <div className="bg-black/30 border border-amber-500/30 p-6 rounded-3xl shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 joker-btn"></div>
+                    <h3 className="gold-text font-bold text-base mb-5 flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/30">
+                        <i className="fa-solid fa-key"></i>
+                      </div>
+                      System API Keys (Shared - Key မရှိသူများအတွက်)
+                    </h3>
+                    <div className="space-y-5">
+                      <div>
+                        <label className="text-xs font-bold text-purple-300 block mb-2 flex justify-between">
+                          <span>Gemini API Key</span>
+                          <span className="text-amber-500/70 text-[10px] bg-amber-500/10 px-2 py-0.5 rounded">Translation အတွက်</span>
+                        </label>
+                        <input type="password" value={systemGeminiKey} onChange={(e) => setSystemGeminiKey(e.target.value)} className="w-full bg-black/40 border border-purple-500/30 focus:border-amber-500 rounded-xl py-3 px-3 text-white text-sm outline-none transition-colors input-focus-ring" placeholder="AIzaSy..." />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-purple-300 block mb-2 flex justify-between">
+                          <span>Groq API Keys</span>
+                          <span className="text-amber-500/70 text-[10px] bg-amber-500/10 px-2 py-0.5 rounded">တစ်လိုင်းတစ်ကီး</span>
+                        </label>
+                        <textarea rows="4" value={systemGroqKeysInput} onChange={(e) => setSystemGroqKeysInput(e.target.value)} className="w-full bg-black/40 border border-purple-500/30 focus:border-amber-500 rounded-xl py-3 px-3 text-white text-xs font-mono outline-none transition-colors resize-none input-focus-ring" placeholder={"gsk_key_1\ngsk_key_2\n..."}></textarea>
+                      </div>
+                      <button onClick={saveSystemKeys} className="w-full joker-btn hover:opacity-90 text-slate-900 py-3.5 rounded-xl font-bold text-sm shadow-lg transform transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-cloud-arrow-up"></i> Save Keys to Cloud
+                      </button>
+                      <p className="text-[10px] text-purple-400">Key မထည့်ထားသော user များ Extract Text/Translate သုံးသည့်အခါ ဤ key များကို အလှည့်ကျ (rotation) သုံးမည်။</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </main>
           </div>
+
+          {/* ADMIN LOGIN MODAL */}
+          {showAdminLoginModal && (
+            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+              <div className="glass-card border border-purple-500/30 w-full max-w-xs rounded-3xl p-8 relative text-center shadow-2xl">
+                <button onClick={() => setShowAdminLoginModal(false)} className="absolute top-4 right-4 text-purple-400 w-8 h-8 hover:text-white bg-black/40 rounded-full flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
+                <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/30 mx-auto mb-4 text-2xl">🃏</div>
+                <h3 className="text-lg font-bold gold-text mb-6">Admin Login</h3>
+                <form onSubmit={handleAdminLogin} className="space-y-5">
+                  <input type="password" required value={adminPasswordInput} onChange={(e) => setAdminPasswordInput(e.target.value)} className="w-full bg-black/40 border border-purple-500/30 rounded-xl p-4 text-white text-center tracking-[0.3em] text-xl outline-none focus:border-amber-500 transition-colors input-focus-ring" placeholder="••••••" />
+                  <button type="submit" className="w-full joker-btn text-slate-900 font-bold py-4 rounded-xl shadow-lg hover:opacity-90 transition-transform active:scale-95">ဝင်မည်</button>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
