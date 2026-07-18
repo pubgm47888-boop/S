@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Joker AI Workspace - 100% Free Movie Recap</title>
-  
+  <title>Joker AI Workspace</title>
+
   <script>window.onerror = function(message) { console.error(message); return true; };</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -13,67 +13,86 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    /* BG ကို တောက်ပသော ရွှေရောင်လွှမ်းသည့် Luxury Gold Gradient သို့ ပြောင်းလဲထားပါသည် */
-    body { 
-      font-family: 'Outfit', sans-serif; 
-      background: radial-gradient(circle at center, #2d1f00 0%, #0d0a00 100%); 
-      color: #f8fafc; 
-      margin: 0; 
-      padding: 0; 
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Outfit', sans-serif;
+      margin: 0; padding: 0; color: #fdf6e3;
+      background: radial-gradient(circle at 20% 0%, #3a2a52 0%, #17101f 45%, #0b0710 100%);
+      min-height: 100vh;
     }
+    .joker-font { font-family: 'Fredoka', sans-serif; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 10px; }
-    
-    /* Joker UI Theme - နက်မှောင်သော ခရမ်းရင့်ရောင်နှင့် စိမ်းဖန်ဖန် နီပြာရောင်စပ်စပ် ကတ်ပုံစံ */
-    .joker-card { 
-      background: #130b24; 
-      border: 2px solid #581c87; 
-      box-shadow: 0 0 25px rgba(147, 51, 234, 0.25); 
-    }
+    ::-webkit-scrollbar-thumb { background: #6b21a8; border-radius: 10px; }
+    .glass-card { background: rgba(24, 14, 32, 0.85); border: 1px solid #caa24a44; box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6); backdrop-filter: blur(6px); }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
-    .input-focus-ring:focus { box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.4); }
+    .input-focus-ring:focus { box-shadow: 0 0 0 2px rgba(202, 162, 74, 0.4); }
+    .gold-text { color: #e8c766; }
+    .gold-grad { background: linear-gradient(90deg,#f7e08a,#caa24a 45%,#8a6a1f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .joker-btn { background: linear-gradient(90deg,#6b21a8,#caa24a 60%,#16a34a); }
+    .joker-ring { border: 2px dashed #caa24a55; }
+    @keyframes floaty { 0%,100%{ transform: translateY(0) rotate(-4deg);} 50%{ transform: translateY(-6px) rotate(4deg);} }
+    .float-joker { animation: floaty 3.2s ease-in-out infinite; display:inline-block; }
+    .progress-track { background: rgba(255,255,255,0.08); }
+    .progress-fill { background: linear-gradient(90deg,#16a34a,#caa24a,#a21caf); transition: width 0.25s ease; }
   </style>
 </head>
 <body>
   <div id="root">
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: #a855f7;">
-      <i class="fa-solid fa-joker fa-beat" style="font-size: 4rem; margin-bottom: 1rem; color: #22c55e;"></i>
-      <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; color: #f59e0b;">JOKER STUDIO OPENING...</h2>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:#e8c766;">
+      <span style="font-size:3rem;" class="float-joker">🃏</span>
+      <h2 style="font-size:1.1rem;font-weight:600;margin-top:1rem;color:#fdf6e3;">Workspace ကို ဖွင့်နေပါသည်...</h2>
     </div>
   </div>
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    const safeGetLocal = (key, defaultVal) => { try { return window.localStorage.getItem(key) || defaultVal; } catch(e) { return defaultVal; } };
-    const safeSetLocal = (key, val) => { try { window.localStorage.setItem(key, val); } catch(e) {} };
+    // 10 Myanmar TTS voice presets.
+    // NOTE: Microsoft/Edge neural TTS currently only ships two real Myanmar voices
+    // (Nilar = female, Thiha = male). To give 10 distinct-feeling options without
+    // pretending fake voices exist, each of the two real voices is paired with
+    // 5 curated speed/pitch styles. Users can still fine-tune with the sliders.
+    const VOICE_PRESETS = [
+      { id: 'nilar-normal',   voice: 'my-MM-NilarNeural', label: 'နီလာ - ပုံမှန်',      rate: 0,   pitch: 0 },
+      { id: 'nilar-slow',     voice: 'my-MM-NilarNeural', label: 'နီလာ - နှေးနှေးလေး',   rate: -20, pitch: -10 },
+      { id: 'nilar-fast',     voice: 'my-MM-NilarNeural', label: 'နီလာ - မြန်မြန်',      rate: 20,  pitch: 5 },
+      { id: 'nilar-warm',     voice: 'my-MM-NilarNeural', label: 'နီလာ - နူးညံ့',       rate: -10, pitch: -5 },
+      { id: 'nilar-energetic',voice: 'my-MM-NilarNeural', label: 'နီလာ - တက်ကြွ',       rate: 15,  pitch: 15 },
+      { id: 'thiha-normal',   voice: 'my-MM-ThihaNeural', label: 'သီဟ - ပုံမှန်',       rate: 0,   pitch: 0 },
+      { id: 'thiha-slow',     voice: 'my-MM-ThihaNeural', label: 'သီဟ - နှေးနှေးလေး',    rate: -20, pitch: -10 },
+      { id: 'thiha-fast',     voice: 'my-MM-ThihaNeural', label: 'သီဟ - မြန်မြန်',       rate: 20,  pitch: 5 },
+      { id: 'thiha-deep',     voice: 'my-MM-ThihaNeural', label: 'သီဟ - နက်နက်ရှိုင်းရှိုင်း', rate: -10, pitch: -20 },
+      { id: 'thiha-energetic',voice: 'my-MM-ThihaNeural', label: 'သီဟ - တက်ကြွ',        rate: 15,  pitch: 15 },
+    ];
 
     function App() {
-      // Premium စနစ်များနှင့် Firebase အားလုံးကို လုံးဝဖြုတ်ပစ်ထားပြီး ၁၀၀% အခမဲ့ သတ်မှတ်ထားပါသည်
-      const [userGeminiKey, setUserGeminiKey] = useState(() => safeGetLocal('gemini_api_key', ''));
-      const [userGroqKey, setUserGroqKey] = useState(() => safeGetLocal('user_groq_api_key', ''));
-      
+      const [userGeminiKey, setUserGeminiKey] = useState('');
+      const [userGroqKey, setUserGroqKey] = useState('');
       const [activeTab, setActiveTab] = useState('transcript');
+
       const [selectedFile, setSelectedFile] = useState(null);
       const [isProcessing, setIsProcessing] = useState(false);
+      const [transcribeProgress, setTranscribeProgress] = useState(0);
       const [logs, setLogs] = useState([]);
-      
-      const [transcriptText, setTranscriptText] = useState(() => safeGetLocal('stored_transcript', ''));
-      const [transcriptSegments, setTranscriptSegments] = useState(() => { try { return JSON.parse(safeGetLocal('stored_segments', '[]')); } catch(e) { return []; } });
-      const [srtText, setSrtText] = useState(() => safeGetLocal('stored_srt', ''));
-      const [translatedText, setTranslatedText] = useState(() => safeGetLocal('stored_translation', ''));
-      const [translatedSrtText, setTranslatedSrtText] = useState(() => safeGetLocal('stored_translated_srt', ''));
+      const [transcriptText, setTranscriptText] = useState('');
+      const [transcriptSegments, setTranscriptSegments] = useState([]);
+      const [srtText, setSrtText] = useState('');
+      const [srtProgress, setSrtProgress] = useState(0);
+      const [translatedText, setTranslatedText] = useState('');
+      const [translatedSrtText, setTranslatedSrtText] = useState('');
+      const [translateTextProgress, setTranslateTextProgress] = useState(0);
+      const [translateSrtProgress, setTranslateSrtProgress] = useState(0);
 
       const [targetLang, setTargetLang] = useState('Myanmar');
       const languagesList = [{ id: 'Myanmar', name: '🇲🇲 မြန်မာ' }, { id: 'English', name: '🇬🇧 အင်္ဂလိပ်' }];
 
       const [ttsInput, setTtsInput] = useState('');
-      const [selectedVoice, setSelectedVoice] = useState('my-MM-ThihaNeural');
-      const [ttsRate, setTtsRate] = useState(15); // Auto-pacing set to +15% default   
-      const [ttsPitch, setTtsPitch] = useState(0); 
+      const [selectedPreset, setSelectedPreset] = useState(VOICE_PRESETS[0].id);
+      const [ttsRate, setTtsRate] = useState(0);
+      const [ttsPitch, setTtsPitch] = useState(0);
       const [isSynthesizing, setIsSynthesizing] = useState(false);
+      const [ttsProgress, setTtsProgress] = useState(0);
       const [synthesizedAudioUrl, setSynthesizedAudioUrl] = useState(null);
       const [ttsErrorDetail, setTtsErrorMsg] = useState('');
 
@@ -81,16 +100,44 @@
 
       const showToast = (message, type = 'info') => {
         setToast({ show: true, message, type });
-        setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+        setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 3500);
       };
 
+      // Apply a preset's default rate/pitch when chosen
       useEffect(() => {
-        safeSetLocal('stored_transcript', transcriptText);
-        safeSetLocal('stored_segments', JSON.stringify(transcriptSegments));
-        safeSetLocal('stored_srt', srtText);
-        safeSetLocal('stored_translation', translatedText);
-        safeSetLocal('stored_translated_srt', translatedSrtText);
-      }, [transcriptText, transcriptSegments, srtText, translatedText, translatedSrtText]);
+        const p = VOICE_PRESETS.find(v => v.id === selectedPreset);
+        if (p) { setTtsRate(p.rate); setTtsPitch(p.pitch); }
+      }, [selectedPreset]);
+
+      // Simple fake-but-honest progress ticker while a real request is in flight.
+      // Climbs to 90% smoothly, then the caller jumps it to 100% on completion.
+      const runWithProgress = async (setProgress, task) => {
+        setProgress(4);
+        let pct = 4;
+        const timer = setInterval(() => {
+          pct = Math.min(90, pct + Math.random() * 9);
+          setProgress(Math.round(pct));
+        }, 250);
+        try {
+          const result = await task();
+          clearInterval(timer);
+          setProgress(100);
+          setTimeout(() => setProgress(0), 900);
+          return result;
+        } catch (err) {
+          clearInterval(timer);
+          setProgress(0);
+          throw err;
+        }
+      };
+
+      const copyToClipboard = async (text, label) => {
+        if (!text || !text.trim()) { showToast("ကူးစရာ စာသား မရှိပါ", "error"); return; }
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast(`${label} ကို ကူးယူပြီးပါပြီ`, "success");
+        } catch (e) { showToast("ကူးယူ၍ မရပါ", "error"); }
+      };
 
       // --- Audio Extraction Logic ---
       const processAndExtractAudio = async (videoFile) => {
@@ -98,7 +145,7 @@
           const reader = new FileReader();
           reader.onload = async (e) => {
             try {
-              setLogs(["အသံလှိုင်းများကို စက္ကန့်ပိုင်းအတွင်း ဆွဲထုတ်နေပါသည်... ⏳"]);
+              setLogs(["အသံလှိုင်းများကို ပြင်ဆင်နေပါသည်... ⏳"]);
               const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
               const decodedBuffer = await audioCtx.decodeAudioData(e.target.result);
               const offlineCtx = new OfflineAudioContext(1, 16000 * decodedBuffer.duration, 16000);
@@ -108,7 +155,7 @@
               bufferSource.start();
               const renderedBuffer = await offlineCtx.startRendering();
               const wavBlob = encodeWAV(renderedBuffer);
-              setLogs([`အသံဖိုင် သီးသန့်ခွဲထုတ်ခြင်း ပြီးမြောက်ပါပြီ။ 🚀`]);
+              setLogs(["အသံဖိုင် သီးသန့်ခွဲထုတ်ခြင်း ပြီးမြောက်ပါပြီ။ 🚀"]);
               resolve(new File([wavBlob], "extracted_audio.wav", { type: "audio/wav" }));
             } catch (err) { reject(err); }
           };
@@ -124,10 +171,10 @@
         const bufferArray = new ArrayBuffer(length);
         const view = new DataView(bufferArray);
         const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
-        writeStr(0, 'RIFF'); view.setUint32(4, length - 8, true); writeStr(8, 'WAVE'); 
-        writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); 
-        view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true); 
-        view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); 
+        writeStr(0, 'RIFF'); view.setUint32(4, length - 8, true); writeStr(8, 'WAVE');
+        writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true);
         view.setUint16(34, 16, true); writeStr(36, 'data'); view.setUint32(40, length - 44, true);
         let offset = 44;
         for (let i = 0; i < buffer.length; i++, offset += 2) {
@@ -137,184 +184,229 @@
         return new Blob([view], { type: 'audio/wav' });
       };
 
-      // --- Secure Vercel friendly Proxy Transcription ---
+      // --- Transcription ---
       const runTranscription = async () => {
         if (!selectedFile) { showToast("ဖိုင်ရွေးချယ်ပေးပါ!", "error"); return; }
-        if (!userGroqKey) { showToast("ထိပ်ဆုံးဘားတွင် Groq API Key အရင်ထည့်သွင်းပေးပါခင်ဗျာ။", "error"); return; }
+        if (!userGroqKey) { showToast("Settings တွင် Groq API Key အရင်ထည့်ပါ", "error"); return; }
 
-        setIsProcessing(true); 
-        setLogs(["AI Transcription စတင်နေပါသည်..."]);
-        
-        let audioFileToSend = selectedFile;
-        if (selectedFile.type.startsWith('video/') || selectedFile.name.match(/\.(mp4|mkv|mov|avi)$/i)) {
-          try { 
-            audioFileToSend = await processAndExtractAudio(selectedFile); 
-          } catch (err) { 
-            setLogs(["ဗီဒီယိုမှ အသံထုတ်ယူခြင်း မအောင်မြင်ပါ။"]); setIsProcessing(false); return; 
-          }
-        }
-
-        const formData = new FormData(); 
-        formData.append('file', audioFileToSend); 
-        formData.append('model', 'whisper-large-v3'); 
-        formData.append('response_format', 'verbose_json');
+        setIsProcessing(true);
+        setLogs(["ကိုယ်ပိုင် Key ဖြင့် စတင်နေပါသည်..."]);
 
         try {
-            setLogs(["Groq Server သို့ ပေးပို့နေပါသည်..."]);
-            const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${userGroqKey}` },
-                body: formData
-            });
-
-            if (res.ok) {
-               const data = await res.json();
-               setTranscriptText(data.text);
-               setTranscriptSegments(data.segments || []);
-               showToast("စာသားထုတ်ယူခြင်း အောင်မြင်ပါသည်။", "success");
-               setLogs(["✅ အောင်မြင်စွာ ပြီးမြောက်ပါပြီ။"]);
-            } else {
-               showToast("API Error! Key သက်တမ်းကို ပြန်စစ်ပေးပါ။", "error");
-               setLogs(["⚠️ API Error. ကျေးဇူးပြု၍ ပြန်လည်ကြိုးစားပါ။"]);
+          await runWithProgress(setTranscribeProgress, async () => {
+            let audioFileToSend = selectedFile;
+            if (selectedFile.type.startsWith('video/') || selectedFile.name.match(/\.(mp4|mkv|mov|avi)$/i)) {
+              audioFileToSend = await processAndExtractAudio(selectedFile);
             }
+            const formData = new FormData();
+            formData.append('file', audioFileToSend);
+            formData.append('model', 'whisper-large-v3');
+            formData.append('response_format', 'verbose_json');
+
+            setLogs(["AI Server သို့ ပေးပို့နေပါသည်..."]);
+            const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${userGroqKey}` },
+              body: formData
+            });
+            if (!res.ok) throw new Error("API Error");
+            const data = await res.json();
+            setTranscriptText(data.text);
+            setTranscriptSegments(data.segments || []);
+            showToast("စာသားထုတ်ယူခြင်း အောင်မြင်ပါသည်။", "success");
+            setLogs(["✅ အောင်မြင်စွာ ပြီးမြောက်ပါပြီ။"]);
+          });
         } catch (err) {
-            showToast("Connection Error", "error");
-            setLogs(["⚠️ Server သို့ ချိတ်ဆက်၍မရပါ။"]);
+          showToast("API Limit (သို့) Connection Error", "error");
+          setLogs(["⚠️ Error. ကျေးဇူးပြု၍ ပြန်လည်ကြိုးစားပါ။"]);
         }
         setIsProcessing(false);
       };
 
-      const generateSrt = () => {
+      const generateSrt = async () => {
         if (!transcriptText || transcriptSegments.length === 0) { showToast("စာသားအရင်ထုတ်ပါ!", "error"); return; }
         setIsProcessing(true);
-        setTimeout(() => {
+        await runWithProgress(setSrtProgress, async () => {
+          await new Promise(r => setTimeout(r, 500));
           let srtResult = "";
           const formatTime = (seconds) => {
             const date = new Date(seconds * 1000);
             return `${String(date.getUTCHours()).padStart(2,'0')}:${String(date.getUTCMinutes()).padStart(2,'0')}:${String(date.getUTCSeconds()).padStart(2,'0')},${String(Math.floor((seconds%1)*1000)).padStart(3,'0')}`;
           };
-          // JSON Protection တပ်ဆင်ထားပြီးသားဖြစ်၍ undefined ဖြစ်မသွားပါ
-          transcriptSegments.forEach((seg, idx) => { 
-            const textContent = seg.myanmar || seg.text || "ဇာတ်လမ်းပြောဖော်ပြချက်";
-            srtResult += `${idx + 1}\n${formatTime(seg.start)} --> ${formatTime(seg.end)}\n${textContent.trim()}\n\n`; 
-          });
-          setSrtText(srtResult); showToast("SRT ဖန်တီးပြီးပါပြီ။", "success"); setIsProcessing(false);
-        }, 500);
+          transcriptSegments.forEach((seg, idx) => { srtResult += `${idx + 1}\n${formatTime(seg.start)} --> ${formatTime(seg.end)}\n${seg.text.trim()}\n\n`; });
+          setSrtText(srtResult);
+          showToast("SRT ဖန်တီးပြီးပါပြီ။", "success");
+        });
+        setIsProcessing(false);
       };
 
       const runTranslation = async (type) => {
-        if (!userGeminiKey) { showToast("ထိပ်ဆုံးဘားတွင် Gemini API Key အရင်ထည့်ပါ။", "error"); return; }
-        
+        if (!userGeminiKey) { showToast("Settings တွင် Gemini API Key အရင်ထည့်ပါ", "error"); return; }
         const sourceContent = type === 'srt' ? srtText : transcriptText;
         if (!sourceContent.trim()) { showToast("ဘာသာပြန်ရန် စာသားအရင်ထည့်ပါ။", "error"); return; }
 
         setIsProcessing(true);
-        // Protected JSON structure prompt maps
-        const prompt = type === 'srt' ? 
-          `Translate this SRT file into ${targetLang}. Preserve all numbers and timestamps exactly. Output strictly valid text. SRT:\n\n${sourceContent}` : 
-          `Translate the following text into ${targetLang}. Return strictly clear translated text segments only. Text:\n\n${sourceContent}`;
-        
+        const progressSetter = type === 'srt' ? setTranslateSrtProgress : setTranslateTextProgress;
+        const prompt = type === 'srt'
+          ? `Translate this SRT file into ${targetLang}. Preserve all numbers and timestamps exactly. Only translate the text. SRT:\n\n${sourceContent}`
+          : `Translate the following text into ${targetLang}:\n\n${sourceContent}`;
+
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          await runWithProgress(progressSetter, async () => {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userGeminiKey}`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            if (!res.ok) throw new Error("API Error");
+            const data = await res.json();
+            const result = data.candidates?.[0]?.content?.parts?.[0]?.text || "Translation Error.";
+            type === 'srt' ? setTranslatedSrtText(result) : setTranslatedText(result);
+            showToast("အောင်မြင်စွာ ပြန်ဆိုပြီးပါပြီ။", "success");
           });
-          if (!res.ok) throw new Error("API Error");
-          const data = await res.json();
-          const result = data.candidates?.[0]?.content?.parts?.[0]?.text || "Translation Error.";
-          type === 'srt' ? setTranslatedSrtText(result) : setTranslatedText(result);
-          showToast(`အောင်မြင်စွာ ပြန်ဆိုပြီးပါပြီ။`, "success");
         } catch (e) { showToast("Key မှားယွင်းနိုင်ပါသည်။", "error"); }
         setIsProcessing(false);
       };
 
-      // --- 100% Fixed Edge TTS Engine via Web Audio Proxy ---
       const runTtsGeneration = async () => {
         const text = ttsInput.trim();
         if (!text) { showToast("စာသားရိုက်ထည့်ပါ!", "error"); return; }
+        const preset = VOICE_PRESETS.find(v => v.id === selectedPreset) || VOICE_PRESETS[0];
 
         setIsSynthesizing(true); setTtsErrorMsg(''); setSynthesizedAudioUrl(null);
+        const existingPlayer = document.getElementById("tts-player");
+        if (existingPlayer) existingPlayer.pause();
 
         try {
-          // Public dynamic direct restful streaming endpoint mapping (+15% speed integrated)
-          const apiEndpoint = `https://api.vvebb.com/tts?voice=${selectedVoice}&text=${encodeURIComponent(text)}&rate=1.15`;
-          const response = await fetch(apiEndpoint);
-          if (!response.ok) throw new Error("TTS voice engine connection error.");
-          
-          const blob = await response.blob();
-          const audioUrl = URL.createObjectURL(blob);
-          setSynthesizedAudioUrl(audioUrl);
-          showToast("မြန်မာအသံဖန်တီးမှု အောင်မြင်ပါသည်။", "success");
-        } catch (err) { setTtsErrorMsg("⚠ " + err.message); } 
+          await runWithProgress(setTtsProgress, async () => {
+            const response = await fetch('/api/generate', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: text, voice: preset.voice, rate: ttsRate, pitch: ttsPitch }),
+            });
+            if (!response.ok) {
+              const errData = await response.json().catch(() => ({}));
+              throw new Error(errData.error || "API ချိတ်ဆက်၍မရပါ။");
+            }
+            const blob = await response.blob();
+            const audioUrl = URL.createObjectURL(blob);
+            setSynthesizedAudioUrl(audioUrl);
+            showToast("အသံဖန်တီးမှု အောင်မြင်ပါသည်။", "success");
+            setTimeout(() => {
+              const player = document.getElementById("tts-player");
+              if (player) player.play();
+            }, 100);
+          });
+        } catch (err) { setTtsErrorMsg("⚠ " + err.message); }
         finally { setIsSynthesizing(false); }
       };
 
       const tabs = [
+        { id: 'settings', icon: 'fa-user', label: 'Profile' },
         { id: 'transcript', icon: 'fa-microphone', label: 'Extract Text' },
         { id: 'srt', icon: 'fa-closed-captioning', label: 'SRT Gen' },
         { id: 'translation', icon: 'fa-language', label: 'Translate' },
         { id: 'tts', icon: 'fa-volume-high', label: 'အသံထွက် (TTS)' }
       ];
 
+      const ProgressBar = ({ value }) => {
+        if (!value) return null;
+        return (
+          <div className="w-full progress-track rounded-full h-2.5 mt-3 overflow-hidden">
+            <div className="progress-fill h-2.5 rounded-full" style={{ width: `${value}%` }}></div>
+            <p className="text-[10px] gold-text font-bold mt-1 text-center">{value}%</p>
+          </div>
+        );
+      };
+
+      const CopyButton = ({ text, label }) => (
+        <button onClick={() => copyToClipboard(text, label)} className="text-[10px] font-bold gold-text bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg hover:bg-amber-500/20 transition-colors flex items-center gap-1">
+          <i className="fa-solid fa-copy"></i> ကူးယူမည်
+        </button>
+      );
+
       return (
-        <div className="min-h-screen pb-20 md:pb-8 flex flex-col items-center pt-4 md:pt-10 px-4 w-full">
+        <div className="min-h-screen pb-20 md:pb-8 flex flex-col items-center pt-4 md:pt-10 px-4">
           {toast.show && (
-            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-2xl bg-purple-600 text-white font-bold text-sm flex items-center gap-2 border border-purple-400 animate-bounce">
-              <i className="fa-solid fa-joker"></i> {toast.message}
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-lg bg-gradient-to-r from-amber-400 to-yellow-600 text-slate-900 font-bold text-sm flex items-center gap-2">
+              <i className="fa-solid fa-circle-info"></i> {toast.message}
             </div>
           )}
 
           <div className="w-full max-w-2xl">
-            {/* JOKER LOGO & HEADER SETUP */}
-            <header className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 bg-[#1a0f2e] border-2 border-purple-600 p-4 rounded-3xl shadow-xl">
-              <div className="flex items-center space-x-3">
-                <div className="bg-gradient-to-tr from-purple-600 to-green-500 p-3 rounded-2xl shadow-lg border border-purple-400">
-                  <i className="fa-solid fa-joker text-white text-3xl animate-spin" style={{animationDuration: '3s'}}></i>
-                </div>
+            <header className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <span className="text-4xl float-joker">🃏</span>
                 <div>
-                  <h1 className="text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-red-500 to-green-400 flex items-center gap-2">
-                    JOKER STUDIO
-                  </h1>
-                  <p className="text-xs text-amber-400 font-bold tracking-wider uppercase"><i className="fa-solid fa-bolt"></i> 100% FREE UNLIMITED WORKSPACE</p>
+                  <h1 className="joker-font text-2xl font-bold gold-grad">Joker AI</h1>
+                  <p className="text-xs text-purple-300 font-medium mt-0.5">အားလုံး အခမဲ့ Workspace</p>
                 </div>
               </div>
-              
-              <div className="flex flex-col gap-2 w-full sm:w-auto">
-                <input type="password" value={userGroqKey} onChange={(e) => {setUserGroqKey(e.target.value); safeSetLocal('user_groq_api_key', e.target.value);}} className="bg-slate-950 border border-purple-800 text-purple-300 placeholder-purple-700 font-mono text-center rounded-xl p-2 text-xs focus:outline-none focus:border-green-500 transition-colors" placeholder="Groq API Key ထည့်ရန်" />
-                <input type="password" value={userGeminiKey} onChange={(e) => {setUserGeminiKey(e.target.value); safeSetLocal('gemini_api_key', e.target.value);}} className="bg-slate-950 border border-purple-800 text-purple-300 placeholder-purple-700 font-mono text-center rounded-xl p-2 text-xs focus:outline-none focus:border-green-500 transition-colors" placeholder="Gemini API Key ထည့်ရန်" />
-              </div>
+              <span className="glass-card gold-text font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1">
+                <i className="fa-solid fa-champagne-glasses"></i> အားလုံး Free
+              </span>
             </header>
 
-            {/* JOKER THEMED NAVIGATION TABS */}
             <div className="flex overflow-x-auto gap-3 hide-scrollbar mb-6 pb-2">
               {tabs.map(tab => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap border ${activeTab === tab.id ? 'bg-gradient-to-r from-purple-600 to-indigo-700 text-white shadow-xl border-purple-400' : 'joker-card text-purple-300 hover:text-green-400 hover:bg-purple-950/40 border-purple-900'}`}>
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all whitespace-nowrap ${activeTab === tab.id ? 'joker-btn text-slate-900 shadow-lg' : 'glass-card text-purple-200 hover:text-amber-300 border border-purple-500/20'}`}>
                   <i className={`fa-solid ${tab.icon} text-lg`}></i> {tab.label}
                 </button>
               ))}
             </div>
 
-            {/* JOKER MAIN WORKSPACE GRAPH */}
-            <main className="joker-card rounded-3xl p-6 sm:p-8">
-              
+            <main className="glass-card joker-ring rounded-3xl p-6 sm:p-8">
+
+              {/* PROFILE & SETTINGS TAB */}
+              {activeTab === 'settings' && (
+                <div className="space-y-6">
+                  <div className="bg-black/30 border border-purple-500/20 p-6 rounded-2xl text-center shadow-inner">
+                    <div className="w-16 h-16 bg-amber-500/10 gold-text rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/30 text-3xl">
+                      🃏
+                    </div>
+                    <h3 className="text-white font-bold mb-1">Free Account</h3>
+                    <p className="text-xs text-purple-300 mt-1">Feature အားလုံးကို အကန့်အသတ်မရှိ အခမဲ့သုံးနိုင်ပါသည်</p>
+                  </div>
+
+                  <div className="bg-black/30 border border-purple-500/20 p-5 rounded-xl shadow-inner">
+                    <label className="text-xs font-bold text-purple-200 block mb-2"><i className="fa-solid fa-key mr-2 gold-text"></i>Groq API Key (Transcription အတွက်)</label>
+                    <input type="password" value={userGroqKey} onChange={(e) => setUserGroqKey(e.target.value)} className="w-full bg-black/40 border border-purple-500/30 rounded-lg p-3 text-white text-xs mb-2 input-focus-ring outline-none transition-all" placeholder="gsk_..." />
+                    <p className="text-[10px] text-purple-400">Extract Text feature အတွက် လိုအပ်ပါသည်။</p>
+                  </div>
+
+                  <div className="bg-black/30 border border-purple-500/20 p-5 rounded-xl shadow-inner">
+                    <label className="text-xs font-bold text-purple-200 block mb-2"><i className="fa-solid fa-robot mr-2 gold-text"></i>Gemini API Key (ဘာသာပြန်ရန်)</label>
+                    <input type="password" value={userGeminiKey} onChange={(e) => setUserGeminiKey(e.target.value)} className="w-full bg-black/40 border border-purple-500/30 rounded-lg p-3 text-white text-xs mb-2 input-focus-ring outline-none transition-all" placeholder="AIzaSy..." />
+                    <p className="text-[10px] text-purple-400">Translate feature အတွက် လိုအပ်ပါသည်။</p>
+                  </div>
+
+                  <div className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl text-[11px] text-amber-200/80">
+                    <i className="fa-solid fa-circle-info mr-1"></i> Key များကို ဤစက်ရှင်အတွင်းသာ မှတ်ထားပြီး၊ ဘယ်တော့မှ server ပေါ်သို့ မသိမ်းပါ။ Page ပိတ်ပါက ပြန်ထည့်ရပါမည်။
+                  </div>
+                </div>
+              )}
+
               {/* TRANSCRIPT TAB */}
               {activeTab === 'transcript' && (
                 <div className="space-y-6">
                   <div className="text-center">
                     <div className="relative mb-6">
                       <input type="file" accept="audio/*,video/*" onChange={(e) => setSelectedFile(e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                      <div className="border-2 border-dashed border-purple-800 bg-slate-950 rounded-2xl p-6 hover:border-green-500 transition-colors">
-                        {selectedFile ? <i className="fa-solid fa-file-video text-5xl text-green-400 mx-auto mb-3 block"></i> : <i className="fa-solid fa-mask-joker text-5xl text-purple-600 mx-auto mb-3 block"></i>}
-                        <p className="text-sm font-bold text-purple-300">{selectedFile ? selectedFile.name : "Recap ဗီဒီယို သို့မဟုတ် အသံဖိုင် ဆွဲထည့်ပါ"}</p>
+                      <div className="border-2 border-dashed border-purple-500/40 bg-black/30 rounded-2xl p-6 hover:border-amber-500/50 transition-colors">
+                        {selectedFile ? <i className="fa-solid fa-file-audio text-4xl gold-text mx-auto mb-3 block"></i> : <i className="fa-solid fa-cloud-arrow-up text-4xl text-purple-400 mx-auto mb-3 block"></i>}
+                        <p className="text-sm font-semibold text-purple-100">{selectedFile ? selectedFile.name : "Tap to browse files"}</p>
                       </div>
                     </div>
-                    <button onClick={runTranscription} disabled={isProcessing} className="w-full bg-gradient-to-r from-purple-600 via-red-500 to-green-500 text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 shadow-xl hover:opacity-90 transition-all active:scale-95">
-                      {isProcessing ? <i className="fa-solid fa-joker fa-spin text-2xl"></i> : <i className="fa-solid fa-wand-magic-sparkles text-2xl"></i>} စာသားထုတ်ယူမည် (FREE)
+                    <button onClick={runTranscription} disabled={isProcessing} className="w-full joker-btn hover:opacity-90 text-slate-900 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95">
+                      {isProcessing ? <i className="fa-solid fa-spinner fa-spin text-2xl"></i> : <i className="fa-solid fa-wand-magic-sparkles text-2xl"></i>} စာသားထုတ်ယူမည်
                     </button>
-                    {logs.length > 0 && <p className="text-xs text-green-400 font-bold mt-4 bg-green-500/10 inline-block px-4 py-1.5 rounded-full border border-green-500/20">{logs[logs.length-1]}</p>}
+                    <ProgressBar value={transcribeProgress} />
+                    {logs.length > 0 && <p className="text-xs gold-text font-semibold mt-4 bg-amber-500/10 inline-block px-3 py-1 rounded-full">{logs[logs.length-1]}</p>}
                   </div>
 
-                  <div className="pt-4 border-t border-purple-900">
-                    <textarea rows="6" value={transcriptText} onChange={(e) => setTranscriptText(e.target.value)} className="w-full bg-slate-950 border border-purple-900 rounded-xl p-4 text-purple-100 text-sm outline-none focus:border-green-500 input-focus-ring font-medium" placeholder="ထုတ်ယူထားသော စာသားများ ဤနေရာတွင် ပေါ်လာမည်..." />
+                  <div className="pt-4 border-t border-purple-500/20">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-xs font-bold text-purple-200">ရလဒ်</label>
+                      <CopyButton text={transcriptText} label="Transcript" />
+                    </div>
+                    <textarea rows="6" value={transcriptText} onChange={(e) => setTranscriptText(e.target.value)} className="w-full bg-black/30 border border-purple-500/20 rounded-xl p-4 text-purple-100 text-sm outline-none focus:border-amber-500/50 input-focus-ring" placeholder="Result will appear here..." />
                   </div>
                 </div>
               )}
@@ -322,14 +414,19 @@
               {/* SRT TAB */}
               {activeTab === 'srt' && (
                 <div className="space-y-6">
-                  <div className="text-center pb-6 border-b border-purple-900">
-                    <button onClick={generateSrt} disabled={isProcessing} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:opacity-90 shadow-xl transition-all active:scale-95">
-                      <i className="fa-solid fa-file-video text-2xl"></i> SRT စာတန်းထိုး ဖန်တီးမည်
+                  <div className="text-center pb-6 border-b border-purple-500/20">
+                    <button onClick={generateSrt} disabled={isProcessing} className="w-full joker-btn text-slate-900 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 shadow-lg transition-transform active:scale-95">
+                      <i className="fa-solid fa-file-video text-2xl"></i> SRT ဖန်တီးမည်
                     </button>
+                    <ProgressBar value={srtProgress} />
                   </div>
                   {srtText && (
                     <div>
-                      <textarea rows="8" value={srtText} onChange={(e) => setSrtText(e.target.value)} className="w-full bg-slate-950 border border-purple-900 rounded-xl p-4 text-purple-300 font-mono text-xs outline-none focus:border-green-500 input-focus-ring" />
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="text-xs font-bold text-purple-200">SRT ရလဒ်</label>
+                        <CopyButton text={srtText} label="SRT" />
+                      </div>
+                      <textarea rows="8" value={srtText} onChange={(e) => setSrtText(e.target.value)} className="w-full bg-black/30 border border-purple-500/20 rounded-xl p-4 text-purple-100 font-mono text-xs outline-none focus:border-amber-500/50 input-focus-ring" />
                     </div>
                   )}
                 </div>
@@ -339,74 +436,91 @@
               {activeTab === 'translation' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-black text-purple-400 uppercase tracking-widest"><i className="fa-solid fa-language mr-2 text-green-400"></i>Joker AI Translator</h2>
-                    <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)} className="bg-slate-950 border border-purple-800 py-2 px-3 rounded-xl text-white text-sm outline-none focus:border-green-500">
+                    <h2 className="text-lg font-bold gold-text"><i className="fa-solid fa-language mr-2"></i>AI Translator</h2>
+                    <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)} className="bg-black/30 border border-purple-500/30 py-2 px-3 rounded-xl text-white text-sm outline-none focus:border-amber-500">
                       {languagesList.map(lang => <option key={lang.id} value={lang.id}>{lang.name}</option>)}
                     </select>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-slate-950/50 border border-purple-900 rounded-2xl p-4">
-                      <label className="text-xs font-bold text-purple-400 block mb-2">မူရင်းစာသား (Source Text)</label>
-                      <textarea rows="3" value={transcriptText} onChange={(e) => setTranscriptText(e.target.value)} className="w-full bg-slate-950 border border-purple-900 rounded-xl p-3 text-sm text-purple-200 mb-2 outline-none focus:border-green-500 input-focus-ring" placeholder="ဘာသာပြန်မည့် စာသားကို ဤနေရာတွင် ထည့်ပါ..." />
-                      <button onClick={() => runTranslation('transcript')} disabled={isProcessing} className="w-full bg-purple-600 text-white py-3 rounded-xl font-black text-sm transition-transform active:scale-95 shadow-md">စာသားကို မြန်မာဘာသာပြန်မည်</button>
-                      <label className="text-xs font-bold text-green-400 block mb-2 mt-2">Result</label>
-                      <textarea rows="4" value={translatedText} onChange={(e) => setTranslatedText(e.target.value)} className="w-full bg-slate-950 border border-purple-900 rounded-xl p-3 text-sm text-purple-100 outline-none" placeholder="ဘာသာပြန်စာသား ထွက်ပေါ်လာမည်..." />
+                    <div className="bg-black/20 border border-purple-500/20 rounded-2xl p-4">
+                      <label className="text-xs font-bold text-purple-300 block mb-2">မူရင်းစာသား (Source Text)</label>
+                      <textarea rows="3" value={transcriptText} onChange={(e) => setTranscriptText(e.target.value)} className="w-full bg-black/40 border border-purple-500/20 rounded-xl p-3 text-sm text-purple-100 mb-2 outline-none focus:border-amber-500/50 input-focus-ring" placeholder="ဘာသာပြန်မည့် စာသားကို ဤနေရာတွင် ထည့်ပါ..." />
+                      <button onClick={() => runTranslation('transcript')} disabled={isProcessing} className="w-full bg-amber-500/10 hover:bg-amber-500/20 gold-text border border-amber-500/20 py-3 rounded-xl font-bold mb-1 text-sm transition-colors">စာသားကို ဘာသာပြန်မည်</button>
+                      <ProgressBar value={translateTextProgress} />
+                      <div className="flex justify-between items-center mt-3 mb-2">
+                        <label className="text-xs font-bold text-emerald-400">Result</label>
+                        <CopyButton text={translatedText} label="ဘာသာပြန်ချက်" />
+                      </div>
+                      <textarea rows="4" value={translatedText} onChange={(e) => setTranslatedText(e.target.value)} className="w-full bg-black/30 border border-purple-500/20 rounded-xl p-3 text-sm text-purple-100 outline-none" placeholder="Translated text..." />
                     </div>
 
-                    <div className="bg-slate-950/50 border border-purple-900 rounded-2xl p-4">
-                      <label className="text-xs font-bold text-purple-400 block mb-2">မူရင်း SRT (Source SRT)</label>
-                      <textarea rows="3" value={srtText} onChange={(e) => setSrtText(e.target.value)} className="w-full bg-slate-950 border border-purple-900 rounded-xl p-3 text-xs font-mono text-purple-200 mb-2 outline-none focus:border-green-500 input-focus-ring" placeholder="ဘာသာပြန်မည့် SRT စာသား..." />
-                      <button onClick={() => runTranslation('srt')} disabled={isProcessing} className="w-full bg-purple-600 text-white py-3 rounded-xl font-black text-sm transition-transform active:scale-95 shadow-md">SRT ဖိုင်ကို မြန်မာဘာသာပြန်မည်</button>
-                      <label className="text-xs font-bold text-green-400 block mb-2 mt-2">Result SRT</label>
-                      <textarea rows="4" value={translatedSrtText} onChange={(e) => setTranslatedSrtText(e.target.value)} className="w-full bg-slate-950 border border-purple-900 rounded-xl p-3 text-xs font-mono text-purple-100 outline-none" placeholder="SRT ဘာသာပြန် ရလဒ်..." />
+                    <div className="bg-black/20 border border-purple-500/20 rounded-2xl p-4">
+                      <label className="text-xs font-bold text-purple-300 block mb-2">မူရင်း SRT (Source SRT)</label>
+                      <textarea rows="3" value={srtText} onChange={(e) => setSrtText(e.target.value)} className="w-full bg-black/40 border border-purple-500/20 rounded-xl p-3 text-xs font-mono text-purple-100 mb-2 outline-none focus:border-amber-500/50 input-focus-ring" placeholder="ဘာသာပြန်မည့် SRT စာသားကို ဤနေရာတွင် ထည့်ပါ..." />
+                      <button onClick={() => runTranslation('srt')} disabled={isProcessing} className="w-full bg-amber-500/10 hover:bg-amber-500/20 gold-text border border-amber-500/20 py-3 rounded-xl font-bold mb-1 text-sm transition-colors">SRT ကို ဘာသာပြန်မည်</button>
+                      <ProgressBar value={translateSrtProgress} />
+                      <div className="flex justify-between items-center mt-3 mb-2">
+                        <label className="text-xs font-bold text-emerald-400">Result SRT</label>
+                        <CopyButton text={translatedSrtText} label="ဘာသာပြန် SRT" />
+                      </div>
+                      <textarea rows="4" value={translatedSrtText} onChange={(e) => setTranslatedSrtText(e.target.value)} className="w-full bg-black/30 border border-purple-500/20 rounded-xl p-3 text-xs font-mono text-purple-100 outline-none" placeholder="Translated SRT..." />
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* TTS TAB - ၁၁၀% အခမဲ့ဖြစ်ပြီး သီဟ/နီလာ အသံအင်ဂျင်စစ်စစ် တပ်ဆင်ထားပါသည် */}
+              {/* TTS TAB */}
               {activeTab === 'tts' && (
                 <div className="space-y-6">
-                  <div className="space-y-6">
-                    <div className="bg-slate-950 p-5 rounded-2xl border border-purple-900 space-y-4 shadow-inner">
-                      <div>
-                         <label className="text-xs text-purple-300 font-bold block mb-2">အသံ ရွေးချယ်ရန် (သီဟ နှင့် နီလာ စနစ်စစ်)</label>
-                         <div className="relative">
-                            <i className="fa-solid fa-microphone-lines absolute left-3 top-1/2 -translate-y-1/2 text-purple-500"></i>
-                            <select value={selectedVoice} onChange={(e) => setSelectedVoice(e.target.value)} className="w-full bg-slate-900 pl-10 pr-3 py-3 rounded-xl text-white outline-none border border-purple-800 focus:border-green-500 transition-colors font-bold text-xs text-amber-400">
-                              <option value="my-MM-ThihaNeural">Thiha (သီဟ - အမျိုးသားသံ)</option>
-                              <option value="my-MM-NilarNeural">Nilar (နီလာ - အမျိုးသမီးသံ)</option>
-                            </select>
-                         </div>
+                  <div className="bg-black/30 p-5 rounded-2xl border border-purple-500/20 space-y-4 shadow-inner">
+                    <div>
+                      <label className="text-xs text-purple-300 font-bold block mb-2">အသံ ရွေးချယ်ရန် (၁၀ မျိုး)</label>
+                      <div className="relative">
+                        <i className="fa-solid fa-microphone-lines absolute left-3 top-1/2 -translate-y-1/2 text-purple-400"></i>
+                        <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)} className="w-full bg-black/40 pl-10 pr-3 py-3 rounded-xl text-white outline-none border border-purple-500/30 focus:border-amber-500/50 transition-colors">
+                          {VOICE_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                        </select>
                       </div>
-
-                      <div className="flex gap-4">
-                        <div className="flex-1">
-                          <label className="text-xs text-purple-400 font-bold block mb-1">Narration Pacing</label>
-                          <input type="text" value="+15% Speed (Recap Speed)" className="w-full bg-slate-900 border border-purple-900 p-2 rounded text-xs text-gray-400" disabled />
-                        </div>
-                      </div>
+                      <p className="text-[10px] text-purple-400 mt-2">အခြေခံ အသံ ၂ မျိုး (နီလာ/သီဟ) ကို style ၅ မျိုးစီနှင့် ပေါင်းစပ်ထားသည်။ Slider ဖြင့် ထပ်၍ ချိန်ညှိနိုင်ပါသည်။</p>
                     </div>
 
-                    <textarea rows="6" value={ttsInput} onChange={(e) => setTtsInput(e.target.value)} className="w-full bg-slate-950 border border-purple-900 rounded-2xl p-4 text-purple-100 outline-none focus:border-green-500 input-focus-ring font-medium" placeholder="မြန်မာစာ ရိုက်ထည့်ပါ..." />
-                    
-                    <button onClick={runTtsGeneration} disabled={isSynthesizing} className="w-full bg-gradient-to-r from-purple-600 via-red-500 to-green-500 text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 shadow-xl hover:opacity-90 transition-all active:scale-95">
-                       {isSynthesizing ? <i className="fa-solid fa-spinner fa-spin text-xl"></i> : <i className="fa-solid fa-play text-xl"></i>} ဇာတ်လမ်းပြော မြန်မာအသံဖန်တီးမည် (FREE)
-                    </button>
-                    
-                    {ttsErrorDetail && <p className="text-sm text-red-400 text-center font-bold bg-red-500/10 p-3 rounded-lg border border-red-500/20">{ttsErrorDetail}</p>}
-
-                    {synthesizedAudioUrl && (
-                      <div className="mt-4 p-5 bg-slate-950 rounded-xl border border-purple-900 text-center shadow-inner">
-                         <p className="text-xs text-green-400 font-bold mb-4 flex items-center justify-center gap-1"><i className="fa-solid fa-circle-check"></i> အသံဖန်တီးမှု အောင်မြင်ပါသည် (၁၀၀% Free)</p>
-                         <audio id="tts-player" controls className="w-full mb-4" src={synthesizedAudioUrl}></audio>
-                         <a href={synthesizedAudioUrl} download="joker_recap_tts.mp3" className="inline-flex items-center gap-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-sm font-black px-6 py-2.5 rounded-xl border border-green-500/30 transition-colors">
-                           <i className="fa-solid fa-download"></i> Download MP3
-                         </a>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="text-xs text-purple-300 font-bold">Speed</label>
+                          <span className="text-xs font-bold gold-text bg-amber-500/10 px-2 py-0.5 rounded-md">{ttsRate > 0 ? '+' : ''}{ttsRate}%</span>
+                        </div>
+                        <input type="range" min="-50" max="50" step="5" value={ttsRate} onChange={(e) => setTtsRate(parseInt(e.target.value))} className="w-full accent-amber-500" />
                       </div>
-                    )}
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="text-xs text-purple-300 font-bold">Pitch</label>
+                          <span className="text-xs font-bold gold-text bg-amber-500/10 px-2 py-0.5 rounded-md">{ttsPitch > 0 ? '+' : ''}{ttsPitch}Hz</span>
+                        </div>
+                        <input type="range" min="-50" max="50" step="5" value={ttsPitch} onChange={(e) => setTtsPitch(parseInt(e.target.value))} className="w-full accent-amber-500" />
+                      </div>
+                    </div>
                   </div>
+
+                  <textarea rows="6" value={ttsInput} onChange={(e) => setTtsInput(e.target.value)} className="w-full bg-black/30 border border-purple-500/20 rounded-2xl p-4 text-white outline-none focus:border-amber-500/50 input-focus-ring" placeholder="မြန်မာစာ ရိုက်ထည့်ပါ..." />
+
+                  <button onClick={runTtsGeneration} disabled={isSynthesizing} className="w-full joker-btn hover:opacity-90 text-slate-900 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95">
+                    {isSynthesizing ? <i className="fa-solid fa-spinner fa-spin text-xl"></i> : <i className="fa-solid fa-play text-xl"></i>} Generate Audio
+                  </button>
+                  <ProgressBar value={ttsProgress} />
+
+                  {ttsErrorDetail && <p className="text-sm text-red-400 text-center font-bold bg-red-500/10 p-3 rounded-lg border border-red-500/20">{ttsErrorDetail}</p>}
+
+                  {synthesizedAudioUrl && (
+                    <div className="mt-4 p-5 bg-black/40 rounded-xl border border-purple-500/20 text-center shadow-inner">
+                      <p className="text-xs text-emerald-400 font-bold mb-4 flex items-center justify-center gap-1"><i className="fa-solid fa-circle-check"></i> အသံဖန်တီးမှု အောင်မြင်ပါသည်</p>
+                      <audio id="tts-player" controls className="w-full mb-4" src={synthesizedAudioUrl}></audio>
+                      <a href={synthesizedAudioUrl} download="joker_tts.mp3" className="inline-flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 gold-text text-sm font-bold px-6 py-2.5 rounded-xl border border-amber-500/30 transition-colors">
+                        <i className="fa-solid fa-download"></i> Download MP3
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -415,8 +529,8 @@
         </div>
       );
     }
-    
-    const root = ReactDOM.createRoot(document.getElementById('root')); 
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App/>);
   </script>
 </body>
