@@ -379,7 +379,7 @@
         try {
           const response = await fetch('/api/generate', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: PREVIEW_TEXT, voice: preset.code, rate: ttsRate, pitch: ttsPitch }),
+            body: JSON.stringify({ text: PREVIEW_TEXT, voice: preset.voice, rate: ttsRate, pitch: ttsPitch }),
           });
           if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
@@ -409,7 +409,7 @@
           await runWithProgress(setTtsProgress, async () => {
             const response = await fetch('/api/generate', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: text, voice: preset.code, rate: ttsRate, pitch: ttsPitch }),
+              body: JSON.stringify({ text: text, voice: preset.voice, rate: ttsRate, pitch: ttsPitch }),
             });
             if (!response.ok) {
               const errData = await response.json().catch(() => ({}));
