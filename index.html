@@ -78,8 +78,18 @@
     };
 
     const VOICE_PRESETS = [
-      { id: 'v1',  voice: VOICE_MAP.v1,  label: 'Voice 1 - မြန်မာ (ယောက်ျား)',      rate: 0, pitch: 0 },
-      { id: 'v2',  voice: VOICE_MAP.v2,  label: 'Voice 2 - မြန်မာ (မိန်းမ)',        rate: 0, pitch: 0 },
+      // 10 style variations of the two real Myanmar voices
+      { id: 'nilar-normal',    voice: VOICE_MAP.v2, label: 'နီလာ - ပုံမှန်',            rate: 0,   pitch: 0 },
+      { id: 'nilar-slow',      voice: VOICE_MAP.v2, label: 'နီလာ - နှေးနှေးလေး',        rate: -20, pitch: -10 },
+      { id: 'nilar-fast',      voice: VOICE_MAP.v2, label: 'နီလာ - မြန်မြန်',           rate: 20,  pitch: 5 },
+      { id: 'nilar-warm',      voice: VOICE_MAP.v2, label: 'နီလာ - နူးညံ့',            rate: -10, pitch: -5 },
+      { id: 'nilar-energetic', voice: VOICE_MAP.v2, label: 'နီလာ - တက်ကြွ',            rate: 15,  pitch: 15 },
+      { id: 'thiha-normal',    voice: VOICE_MAP.v1, label: 'သီဟ - ပုံမှန်',            rate: 0,   pitch: 0 },
+      { id: 'thiha-slow',      voice: VOICE_MAP.v1, label: 'သီဟ - နှေးနှေးလေး',        rate: -20, pitch: -10 },
+      { id: 'thiha-fast',      voice: VOICE_MAP.v1, label: 'သီဟ - မြန်မြန်',           rate: 20,  pitch: 5 },
+      { id: 'thiha-deep',      voice: VOICE_MAP.v1, label: 'သီဟ - နက်နက်ရှိုင်းရှိုင်း', rate: -10, pitch: -20 },
+      { id: 'thiha-energetic', voice: VOICE_MAP.v1, label: 'သီဟ - တက်ကြွ',            rate: 15,  pitch: 15 },
+      // 14 additional multilingual voices that can also read Myanmar text
       { id: 'v3',  voice: VOICE_MAP.v3,  label: 'Voice 3 - ယောက်ျား (နူးညံ့)',      rate: 0, pitch: 0 },
       { id: 'v4',  voice: VOICE_MAP.v4,  label: 'Voice 4 - ယောက်ျား (ခိုင်မာ)',      rate: 0, pitch: 0 },
       { id: 'v5',  voice: VOICE_MAP.v5,  label: 'Voice 5 - ယောက်ျား (ပုံမှန်)',      rate: 0, pitch: 0 },
@@ -147,6 +157,8 @@
       const [ttsProgress, setTtsProgress] = useState(0);
       const [synthesizedAudioUrl, setSynthesizedAudioUrl] = useState(null);
       const [ttsErrorDetail, setTtsErrorMsg] = useState('');
+      const [isPreviewing, setIsPreviewing] = useState(false);
+      const [previewUrl, setPreviewUrl] = useState(null);
 
       const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
 
@@ -178,10 +190,11 @@
 
       const handleAdminLogin = (e) => {
         e.preventDefault();
-        if (adminPasswordInput === "111") {
+        if (adminPasswordInput === "223344") {
           setIsAdminAuthenticated(true);
           setShowAdminLoginModal(false);
           setAdminPasswordInput('');
+          setActiveTab('admin');
           showToast("Admin ဝင်ရောက်ပြီးပါပြီ။", "success");
         } else { showToast("Password မှားယွင်းပါသည်။", "error"); }
       };
@@ -369,6 +382,33 @@
         setIsProcessing(false);
       };
 
+      const PREVIEW_TEXT = "မင်္ဂလာပါ၊ ဒါက အသံနမူနာ ဖြစ်ပါတယ်။";
+
+      const previewVoice = async () => {
+        const preset = VOICE_PRESETS.find(v => v.id === selectedPreset) || VOICE_PRESETS[0];
+        setIsPreviewing(true); setPreviewUrl(null);
+        const existingPreview = document.getElementById("preview-player");
+        if (existingPreview) existingPreview.pause();
+        try {
+          const response = await fetch('/api/generate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: PREVIEW_TEXT, voice: preset.voice, rate: ttsRate, pitch: ttsPitch }),
+          });
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || "Preview ထုတ်၍မရပါ။");
+          }
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          setPreviewUrl(url);
+          setTimeout(() => {
+            const player = document.getElementById("preview-player");
+            if (player) player.play();
+          }, 100);
+        } catch (err) { showToast(err.message, "error"); }
+        setIsPreviewing(false);
+      };
+
       const runTtsGeneration = async () => {
         const text = ttsInput.trim();
         if (!text) { showToast("စာသားရိုက်ထည့်ပါ!", "error"); return; }
@@ -452,7 +492,7 @@
                     <i className="fa-solid fa-lock text-lg"></i>
                   </button>
                 ) : (
-                  <button onClick={() => setIsAdminAuthenticated(false)} className="bg-red-500/10 text-red-400 border border-red-500/20 w-10 h-10 rounded-xl flex items-center justify-center">
+                  <button onClick={() => { setIsAdminAuthenticated(false); setActiveTab('transcript'); }} className="bg-red-500/10 text-red-400 border border-red-500/20 w-10 h-10 rounded-xl flex items-center justify-center">
                     <i className="fa-solid fa-right-from-bracket text-lg"></i>
                   </button>
                 )}
@@ -588,14 +628,22 @@
                 <div className="space-y-6">
                   <div className="bg-black/30 p-5 rounded-2xl border border-purple-500/20 space-y-4 shadow-inner">
                     <div>
-                      <label className="text-xs text-purple-300 font-bold block mb-2">အသံ ရွေးချယ်ရန် (၁၀ မျိုး)</label>
+                      <label className="text-xs text-purple-300 font-bold block mb-2">အသံ ရွေးချယ်ရန် (၂၄ မျိုး)</label>
                       <div className="relative">
                         <i className="fa-solid fa-microphone-lines absolute left-3 top-1/2 -translate-y-1/2 text-purple-400"></i>
-                        <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)} className="w-full bg-black/40 pl-10 pr-3 py-3 rounded-xl text-white outline-none border border-purple-500/30 focus:border-amber-500/50 transition-colors">
+                        <select value={selectedPreset} onChange={(e) => { setSelectedPreset(e.target.value); setPreviewUrl(null); }} className="w-full bg-black/40 pl-10 pr-3 py-3 rounded-xl text-white outline-none border border-purple-500/30 focus:border-amber-500/50 transition-colors">
                           {VOICE_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
                         </select>
                       </div>
-                      <p className="text-[10px] text-purple-400 mt-2">အခြေခံ အသံ ၂ မျိုး (နီလာ/သီဟ) ကို style ၅ မျိုးစီနှင့် ပေါင်းစပ်ထားသည်။ Slider ဖြင့် ထပ်၍ ချိန်ညှိနိုင်ပါသည်။</p>
+                      <p className="text-[10px] text-purple-400 mt-2">နီလာ/သီဟ အသံအစစ် ၂ မျိုးကို style ၅ မျိုးစီနှင့် ပေါင်း ၁၀ မျိုး + နောက်ထပ် voice ၁၄ မျိုး = စုစုပေါင်း ၂၄ မျိုး။</p>
+
+                      <button onClick={previewVoice} disabled={isPreviewing} className="mt-3 w-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 border border-purple-500/30 py-2.5 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-2">
+                        {isPreviewing ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-headphones"></i>}
+                        အသံနမူနာ စမ်းကြည့်မည်
+                      </button>
+                      {previewUrl && (
+                        <audio id="preview-player" controls className="w-full mt-3" src={previewUrl}></audio>
+                      )}
                     </div>
 
                     <div className="flex gap-4">
