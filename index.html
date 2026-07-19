@@ -79,29 +79,29 @@
 
     const VOICE_PRESETS = [
       // 10 style variations of the two real Myanmar voices
-      { id: 'nilar-normal',    voice: VOICE_MAP.v2, label: 'နီလာ - ပုံမှန်',            rate: 0,   pitch: 0 },
-      { id: 'nilar-slow',      voice: VOICE_MAP.v2, label: 'နီလာ - နှေးနှေးလေး',        rate: -20, pitch: -10 },
-      { id: 'nilar-fast',      voice: VOICE_MAP.v2, label: 'နီလာ - မြန်မြန်',           rate: 20,  pitch: 5 },
-      { id: 'nilar-warm',      voice: VOICE_MAP.v2, label: 'နီလာ - နူးညံ့',            rate: -10, pitch: -5 },
-      { id: 'nilar-energetic', voice: VOICE_MAP.v2, label: 'နီလာ - တက်ကြွ',            rate: 15,  pitch: 15 },
-      { id: 'thiha-normal',    voice: VOICE_MAP.v1, label: 'သီဟ - ပုံမှန်',            rate: 0,   pitch: 0 },
-      { id: 'thiha-slow',      voice: VOICE_MAP.v1, label: 'သီဟ - နှေးနှေးလေး',        rate: -20, pitch: -10 },
-      { id: 'thiha-fast',      voice: VOICE_MAP.v1, label: 'သီဟ - မြန်မြန်',           rate: 20,  pitch: 5 },
-      { id: 'thiha-deep',      voice: VOICE_MAP.v1, label: 'သီဟ - နက်နက်ရှိုင်းရှိုင်း', rate: -10, pitch: -20 },
-      { id: 'thiha-energetic', voice: VOICE_MAP.v1, label: 'သီဟ - တက်ကြွ',            rate: 15,  pitch: 15 },
+      { id: 'nilar-normal',    code: 'v2', voice: VOICE_MAP.v2, label: 'နီလာ - ပုံမှန်',            rate: 0,   pitch: 0 },
+      { id: 'nilar-slow',      code: 'v2', voice: VOICE_MAP.v2, label: 'နီလာ - နှေးနှေးလေး',        rate: -20, pitch: -10 },
+      { id: 'nilar-fast',      code: 'v2', voice: VOICE_MAP.v2, label: 'နီလာ - မြန်မြန်',           rate: 20,  pitch: 5 },
+      { id: 'nilar-warm',      code: 'v2', voice: VOICE_MAP.v2, label: 'နီလာ - နူးညံ့',            rate: -10, pitch: -5 },
+      { id: 'nilar-energetic', code: 'v2', voice: VOICE_MAP.v2, label: 'နီလာ - တက်ကြွ',            rate: 15,  pitch: 15 },
+      { id: 'thiha-normal',    code: 'v1', voice: VOICE_MAP.v1, label: 'သီဟ - ပုံမှန်',            rate: 0,   pitch: 0 },
+      { id: 'thiha-slow',      code: 'v1', voice: VOICE_MAP.v1, label: 'သီဟ - နှေးနှေးလေး',        rate: -20, pitch: -10 },
+      { id: 'thiha-fast',      code: 'v1', voice: VOICE_MAP.v1, label: 'သီဟ - မြန်မြန်',           rate: 20,  pitch: 5 },
+      { id: 'thiha-deep',      code: 'v1', voice: VOICE_MAP.v1, label: 'သီဟ - နက်နက်ရှိုင်းရှိုင်း', rate: -10, pitch: -20 },
+      { id: 'thiha-energetic', code: 'v1', voice: VOICE_MAP.v1, label: 'သီဟ - တက်ကြွ',            rate: 15,  pitch: 15 },
       // 14 additional multilingual voices that can also read Myanmar text
-      { id: 'v3',  voice: VOICE_MAP.v3,  label: 'Voice 3 - ယောက်ျား (နူးညံ့)',      rate: 0, pitch: 0 },
-      { id: 'v4',  voice: VOICE_MAP.v4,  label: 'Voice 4 - ယောက်ျား (ခိုင်မာ)',      rate: 0, pitch: 0 },
-      { id: 'v5',  voice: VOICE_MAP.v5,  label: 'Voice 5 - ယောက်ျား (ပုံမှန်)',      rate: 0, pitch: 0 },
-      { id: 'v6',  voice: VOICE_MAP.v6,  label: 'Voice 6 - မိန်းမ (တက်ကြွ)',        rate: 0, pitch: 0 },
-      { id: 'v7',  voice: VOICE_MAP.v7,  label: 'Voice 7 - ယောက်ျား (နက်ရှိုင်း)',   rate: 0, pitch: 0 },
-      { id: 'v8',  voice: VOICE_MAP.v8,  label: 'Voice 8 - မိန်းမ (ပွင့်လင်း)',      rate: 0, pitch: 0 },
-      { id: 'v9',  voice: VOICE_MAP.v9,  label: 'Voice 9 - ယောက်ျား (နူးညံ့)',      rate: 0, pitch: 0 },
-      { id: 'v10', voice: VOICE_MAP.v10, label: 'Voice 10 - မိန်းမ (ချိုမြိန်)',     rate: 0, pitch: 0 },
-      { id: 'v11', voice: VOICE_MAP.v11, label: 'Voice 11 - မိန်းမ (ပရိုဖက်ရှင်နယ်)', rate: 0, pitch: 0 },
-      { id: 'v12', voice: VOICE_MAP.v12, label: 'Voice 12 - ယောက်ျား (တည်ငြိမ်)',    rate: 0, pitch: 0 },
-      { id: 'v13', voice: VOICE_MAP.v13, label: 'Voice 13 - မိန်းမ (နွေးထွေး)',      rate: 0, pitch: 0 },
-      { id: 'v14', voice: VOICE_MAP.v14, label: 'Voice 14 - ယောက်ျား (ချောမွေ့)',    rate: 0, pitch: 0 },
+      { id: 'v3',  code: 'v3',  voice: VOICE_MAP.v3,  label: 'Voice 3 - ယောက်ျား (နူးညံ့)',      rate: 0, pitch: 0 },
+      { id: 'v4',  code: 'v4',  voice: VOICE_MAP.v4,  label: 'Voice 4 - ယောက်ျား (ခိုင်မာ)',      rate: 0, pitch: 0 },
+      { id: 'v5',  code: 'v5',  voice: VOICE_MAP.v5,  label: 'Voice 5 - ယောက်ျား (ပုံမှန်)',      rate: 0, pitch: 0 },
+      { id: 'v6',  code: 'v6',  voice: VOICE_MAP.v6,  label: 'Voice 6 - မိန်းမ (တက်ကြွ)',        rate: 0, pitch: 0 },
+      { id: 'v7',  code: 'v7',  voice: VOICE_MAP.v7,  label: 'Voice 7 - ယောက်ျား (နက်ရှိုင်း)',   rate: 0, pitch: 0 },
+      { id: 'v8',  code: 'v8',  voice: VOICE_MAP.v8,  label: 'Voice 8 - မိန်းမ (ပွင့်လင်း)',      rate: 0, pitch: 0 },
+      { id: 'v9',  code: 'v9',  voice: VOICE_MAP.v9,  label: 'Voice 9 - ယောက်ျား (နူးညံ့)',      rate: 0, pitch: 0 },
+      { id: 'v10', code: 'v10', voice: VOICE_MAP.v10, label: 'Voice 10 - မိန်းမ (ချိုမြိန်)',     rate: 0, pitch: 0 },
+      { id: 'v11', code: 'v11', voice: VOICE_MAP.v11, label: 'Voice 11 - မိန်းမ (ပရိုဖက်ရှင်နယ်)', rate: 0, pitch: 0 },
+      { id: 'v12', code: 'v12', voice: VOICE_MAP.v12, label: 'Voice 12 - ယောက်ျား (တည်ငြိမ်)',    rate: 0, pitch: 0 },
+      { id: 'v13', code: 'v13', voice: VOICE_MAP.v13, label: 'Voice 13 - မိန်းမ (နွေးထွေး)',      rate: 0, pitch: 0 },
+      { id: 'v14', code: 'v14', voice: VOICE_MAP.v14, label: 'Voice 14 - ယောက်ျား (ချောမွေ့)',    rate: 0, pitch: 0 },
     ];
 
     // --- Firebase Setup (used only to host shared system API keys) ---
@@ -392,7 +392,7 @@
         try {
           const response = await fetch('/api/generate', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: PREVIEW_TEXT, voice: preset.voice, rate: ttsRate, pitch: ttsPitch }),
+            body: JSON.stringify({ text: PREVIEW_TEXT, voice: preset.code, rate: ttsRate, pitch: ttsPitch }),
           });
           if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
@@ -422,7 +422,7 @@
           await runWithProgress(setTtsProgress, async () => {
             const response = await fetch('/api/generate', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: text, voice: preset.voice, rate: ttsRate, pitch: ttsPitch }),
+              body: JSON.stringify({ text: text, voice: preset.code, rate: ttsRate, pitch: ttsPitch }),
             });
             if (!response.ok) {
               const errData = await response.json().catch(() => ({}));
