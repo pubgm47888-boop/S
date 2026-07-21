@@ -110,8 +110,11 @@
     } catch (e) {}
 
     function App() {
+      const [firebaseUser, setFirebaseUser] = useState(null);
       const [userGeminiKey, setUserGeminiKey] = useState('');
       const [userGroqKey, setUserGroqKey] = useState('');
+      const [isSavingKeys, setIsSavingKeys] = useState(false);
+      const [usageLogs, setUsageLogs] = useState([]);
       const [systemGroqKeys, setSystemGroqKeys] = useState([]);
       const [systemGroqKeysInput, setSystemGroqKeysInput] = useState('');
       const [currentGroqKeyIndex, setCurrentGroqKeyIndex] = useState(0);
@@ -160,11 +163,23 @@
         if (p) { setTtsRate(p.rate); setTtsPitch(p.pitch); }
       }, [selectedPreset]);
 
-      // Load shared system API keys so people without their own key can still use the app
+      // Sign in anonymously, load shared system keys, and load this device's saved personal keys
       useEffect(() => {
         if (!auth || !db) return;
+        const unsubAuth = auth.onAuthStateChanged(user => {
+          if (user) {
+            setFirebaseUser(user);
+            db.collection("users").doc(user.uid).get().then(doc => {
+              if (doc.exists) {
+                const data = doc.data();
+                if (data.groqKey) setUserGroqKey(data.groqKey);
+                if (data.geminiKey) setUserGeminiKey(data.geminiKey);
+              }
+            }).catch(() => {});
+          }
+        });
         auth.signInAnonymously().catch(() => {});
-        const unsub = db.collection("settings").doc("api_keys").onSnapshot(doc => {
+        const unsubSettings = db.collection("settings").doc("api_keys").onSnapshot(doc => {
           if (doc.exists) {
             const data = doc.data();
             setSystemGeminiKey(data.geminiKey || '');
@@ -172,8 +187,38 @@
             setSystemGroqKeysInput((data.groqKeys || []).join('\n'));
           }
         }, () => {});
-        return () => unsub();
+        return () => { unsubAuth(); unsubSettings(); };
       }, []);
+
+      // Admin-only: watch recent usage activity so admin can see who is using the shared system keys
+      useEffect(() => {
+        if (!db || !isAdminAuthenticated) return;
+        const unsub = db.collection("usage_logs").orderBy("timestamp", "desc").limit(50).onSnapshot(snapshot => {
+          const list = [];
+          snapshot.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          setUsageLogs(list);
+        }, () => {});
+        return () => unsub();
+      }, [isAdminAuthenticated]);
+
+      const saveMyKeys = async () => {
+        if (!db || !firebaseUser) { showToast("Cloud connection မရှိသေးပါ၊ ခဏစောင့်ပြီးထပ်ကြိုးစားပါ", "error"); return; }
+        setIsSavingKeys(true);
+        try {
+          await db.collection("users").doc(firebaseUser.uid).set({
+            groqKey: userGroqKey, geminiKey: userGeminiKey, updatedAt: new Date().toISOString()
+          }, { merge: true });
+          showToast("Key များ သိမ်းဆည်းပြီးပါပြီ", "success");
+        } catch (e) { showToast("သိမ်းဆည်း၍ မရပါ", "error"); }
+        setIsSavingKeys(false);
+      };
+
+      const logUsage = (feature, usedSystemKey) => {
+        if (!db || !firebaseUser) return;
+        db.collection("usage_logs").add({
+          uid: firebaseUser.uid, feature, usedSystemKey, timestamp: new Date().toISOString()
+        }).catch(() => {});
+      };
 
       const handleAdminLogin = (e) => {
         e.preventDefault();
@@ -315,6 +360,7 @@
             setTranscriptSegments(data.segments || []);
             showToast("စာသားထုတ်ယူခြင်း အောင်မြင်ပါသည်။", "success");
             setLogs(["✅ အောင်မြင်စွာ ပြီးမြောက်ပါပြီ။"]);
+            logUsage('transcribe', useSystemKeys);
             if (useSystemKeys) setCurrentGroqKeyIndex(prev => prev + 1);
           });
         } catch (err) {
@@ -342,6 +388,7 @@
       };
 
       const runTranslation = async (type) => {
+        const usedSystemKey = !userGeminiKey;
         const activeKey = userGeminiKey || systemGeminiKey;
         if (!activeKey) { showToast("System Key မရှိပါ။ Settings တွင် ကိုယ်ပိုင် Gemini Key ထည့်ပါ", "error"); return; }
         const sourceContent = type === 'srt' ? srtText : transcriptText;
@@ -359,13 +406,20 @@
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
-            if (!res.ok) throw new Error("API Error");
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              const detail = errData?.error?.message || `HTTP ${res.status}`;
+              throw new Error(detail);
+            }
             const data = await res.json();
             const result = data.candidates?.[0]?.content?.parts?.[0]?.text || "Translation Error.";
             type === 'srt' ? setTranslatedSrtText(result) : setTranslatedText(result);
             showToast("အောင်မြင်စွာ ပြန်ဆိုပြီးပါပြီ။", "success");
+            logUsage('translate_' + type, usedSystemKey);
           });
-        } catch (e) { showToast("Key မှားယွင်းနိုင်ပါသည်။", "error"); }
+        } catch (e) {
+          showToast(`ဘာသာပြန်၍ မရပါ — ${e.message}`, "error");
+        }
         setIsProcessing(false);
       };
 
@@ -519,8 +573,12 @@
                     <p className="text-[10px] text-purple-400">မထည့်ထားပါက Admin ထည့်ထားသော shared Key ကို အလိုအလျောက် သုံးမည်။</p>
                   </div>
 
+                  <button onClick={saveMyKeys} disabled={isSavingKeys} className="w-full joker-btn hover:opacity-90 text-slate-900 py-3.5 rounded-xl font-bold text-sm shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    {isSavingKeys ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-floppy-disk"></i>} Key များ Save လုပ်မည်
+                  </button>
+
                   <div className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl text-[11px] text-amber-200/80">
-                    <i className="fa-solid fa-circle-info mr-1"></i> Key များကို ဤစက်ရှင်အတွင်းသာ မှတ်ထားပြီး၊ ဘယ်တော့မှ server ပေါ်သို့ မသိမ်းပါ။ Page ပိတ်ပါက ပြန်ထည့်ရပါမည်။
+                    <i className="fa-solid fa-circle-info mr-1"></i> "Save" နှိပ်ထားပါက ဤစက်ပေါ်တွင် ပြန်ဝင်လာလျှင် Key ကို အလိုအလျောက် ပြန်ဖြည့်ပေးပါမည်။ Save မလုပ်ဘဲ Page ပိတ်ပါက ပျောက်သွားပါမည်။
                   </div>
                 </div>
               )}
@@ -702,6 +760,30 @@
                         <i className="fa-solid fa-cloud-arrow-up"></i> Save Keys to Cloud
                       </button>
                       <p className="text-[10px] text-purple-400">Key မထည့်ထားသော user များ Extract Text/Translate သုံးသည့်အခါ ဤ key များကို အလှည့်ကျ (rotation) သုံးမည်။</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-purple-200 font-bold text-sm mb-3 flex items-center gap-2">
+                      <i className="fa-solid fa-chart-line gold-text"></i> Shared Key သုံးနေသူများ (Usage Log)
+                    </h3>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {usageLogs.length === 0 ? (
+                        <p className="text-purple-400 text-center py-6 bg-black/30 rounded-xl border border-purple-500/20 text-xs">Usage မှတ်တမ်း မရှိသေးပါ</p>
+                      ) : usageLogs.map(log => (
+                        <div key={log.id} className="bg-black/30 p-3 rounded-xl border border-purple-500/20 flex justify-between items-center">
+                          <div>
+                            <p className="text-purple-100 text-xs font-mono">{log.uid ? log.uid.substring(0, 10) : 'unknown'}...</p>
+                            <p className="text-[10px] text-purple-400 mt-0.5">{log.timestamp ? new Date(log.timestamp).toLocaleString('en-GB') : ''}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] font-bold gold-text bg-amber-500/10 px-2 py-0.5 rounded-md block mb-1">{log.feature}</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${log.usedSystemKey ? 'bg-emerald-500/10 text-emerald-400' : 'bg-purple-500/10 text-purple-300'}`}>
+                              {log.usedSystemKey ? 'Shared Key' : 'Own Key'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
