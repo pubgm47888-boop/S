@@ -10,8 +10,37 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ALLOWED_VOICES = {"my-MM-NilarNeural", "my-MM-ThihaNeural"}
+# --- Voice map: frontend sends a short code (v1-v14), we resolve it to the
+# real Edge-TTS voice name here. Full names are also accepted directly as a
+# fallback, so nothing breaks if the frontend ever sends the full name instead.
+VOICE_MAP = {
+    "v1": "my-MM-ThihaNeural",
+    "v2": "my-MM-NilarNeural",
+    "v3": "it-IT-GiuseppeMultilingualNeural",
+    "v4": "en-AU-WilliamMultilingualNeural",
+    "v5": "en-US-AndrewMultilingualNeural",
+    "v6": "en-US-AvaMultilingualNeural",
+    "v7": "en-US-BrianMultilingualNeural",
+    "v8": "en-US-EmmaMultilingualNeural",
+    "v9": "fr-FR-RemyMultilingualNeural",
+    "v10": "fr-FR-VivienneMultilingualNeural",
+    "v11": "de-DE-SeraphinaMultilingualNeural",
+    "v12": "de-DE-FlorianMultilingualNeural",
+    "v13": "pt-BR-ThalitaMultilingualNeural",
+    "v14": "ko-KR-HyunsuMultilingualNeural",
+}
+ALLOWED_VOICE_NAMES = set(VOICE_MAP.values())
 TEMP_DIR = tempfile.gettempdir()
+
+def _resolve_voice(raw):
+    """Accepts either a short code ('v3') or a full Edge-TTS voice name
+    ('it-IT-GiuseppeMultilingualNeural') and returns the full name, or None
+    if it doesn't match either."""
+    if raw in VOICE_MAP:
+        return VOICE_MAP[raw]
+    if raw in ALLOWED_VOICE_NAMES:
+        return raw
+    return None
 
 def _parse_int(value, name, lo, hi):
     try:
@@ -30,8 +59,8 @@ def generate():
     if not text.strip():
         return jsonify({"error": "No text provided."}), 400
 
-    voice = data.get("voice", "my-MM-NilarNeural")
-    if voice not in ALLOWED_VOICES:
+    voice = _resolve_voice(data.get("voice", "v2"))
+    if voice is None:
         return jsonify({"error": "Invalid voice selection."}), 400
 
     rate, err = _parse_int(data.get("rate", 0), "rate", -50, 50)
