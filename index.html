@@ -453,6 +453,12 @@
 
       const PREVIEW_TEXT = "မင်္ဂလာပါ၊ ဒါက အသံနမူနာ ဖြစ်ပါတယ်။";
 
+      // The backend accepts the two Myanmar voices (v1/v2) by their full Azure
+      // name directly, but only recognizes the other 14 voices by their short
+      // VOICE_MAP code (v3-v14). Sending the wrong form for either causes
+      // "Invalid voice selection".
+      const getPayloadVoice = (preset) => (preset.code === 'v1' || preset.code === 'v2') ? preset.voice : preset.code;
+
       const previewVoice = async () => {
         const preset = VOICE_PRESETS.find(v => v.id === selectedPreset) || VOICE_PRESETS[0];
         setIsPreviewing(true); setPreviewUrl(null);
@@ -461,7 +467,7 @@
         try {
           const response = await fetch('/api/generate', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: PREVIEW_TEXT, voice: preset.voice, rate: ttsRate, pitch: ttsPitch }),
+            body: JSON.stringify({ text: PREVIEW_TEXT, voice: getPayloadVoice(preset), rate: ttsRate, pitch: ttsPitch }),
           });
           if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
@@ -491,7 +497,7 @@
           await runWithProgress(setTtsProgress, async () => {
             const response = await fetch('/api/generate', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: text, voice: preset.voice, rate: ttsRate, pitch: ttsPitch }),
+              body: JSON.stringify({ text: text, voice: getPayloadVoice(preset), rate: ttsRate, pitch: ttsPitch }),
             });
             if (!response.ok) {
               const errData = await response.json().catch(() => ({}));
