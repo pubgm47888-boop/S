@@ -89,6 +89,19 @@
       { id: 'thiha-fast',      code: 'v1', voice: VOICE_MAP.v1, label: 'သီဟ - မြန်မြန်',           rate: 20,  pitch: 5 },
       { id: 'thiha-deep',      code: 'v1', voice: VOICE_MAP.v1, label: 'သီဟ - နက်နက်ရှိုင်းရှိုင်း', rate: -10, pitch: -20 },
       { id: 'thiha-energetic', code: 'v1', voice: VOICE_MAP.v1, label: 'သီဟ - တက်ကြွ',            rate: 15,  pitch: 15 },
+      // 14 additional multilingual voices, given generic (non-celebrity) Myanmar names
+      { id: 'v3',  code: 'v3',  voice: VOICE_MAP.v3,  label: 'ကိုမောင်မောင် - ယောက်ျား',   rate: 0, pitch: 0 },
+      { id: 'v4',  code: 'v4',  voice: VOICE_MAP.v4,  label: 'ကိုသူရ - ယောက်ျား',          rate: 0, pitch: 0 },
+      { id: 'v5',  code: 'v5',  voice: VOICE_MAP.v5,  label: 'ကိုဇေယျာ - ယောက်ျား',        rate: 0, pitch: 0 },
+      { id: 'v6',  code: 'v6',  voice: VOICE_MAP.v6,  label: 'မနှင်းဆီ - မိန်းမ',           rate: 0, pitch: 0 },
+      { id: 'v7',  code: 'v7',  voice: VOICE_MAP.v7,  label: 'ကိုအောင်ကျော် - ယောက်ျား',    rate: 0, pitch: 0 },
+      { id: 'v8',  code: 'v8',  voice: VOICE_MAP.v8,  label: 'မသီတာ - မိန်းမ',              rate: 0, pitch: 0 },
+      { id: 'v9',  code: 'v9',  voice: VOICE_MAP.v9,  label: 'ကိုပြည့်ဖြိုး - ယောက်ျား',    rate: 0, pitch: 0 },
+      { id: 'v10', code: 'v10', voice: VOICE_MAP.v10, label: 'မယုမယု - မိန်းမ',             rate: 0, pitch: 0 },
+      { id: 'v11', code: 'v11', voice: VOICE_MAP.v11, label: 'မခင်မို့မို့ - မိန်းမ',        rate: 0, pitch: 0 },
+      { id: 'v12', code: 'v12', voice: VOICE_MAP.v12, label: 'ကိုသန့်ဇင် - ယောက်ျား',       rate: 0, pitch: 0 },
+      { id: 'v13', code: 'v13', voice: VOICE_MAP.v13, label: 'မအိအိ - မိန်းမ',              rate: 0, pitch: 0 },
+      { id: 'v14', code: 'v14', voice: VOICE_MAP.v14, label: 'ကိုမင်းသိုက် - ယောက်ျား',     rate: 0, pitch: 0 },
     ];
 
     // --- Firebase Setup (used only to host shared system API keys) ---
@@ -115,6 +128,7 @@
       const [userGroqKey, setUserGroqKey] = useState('');
       const [isSavingKeys, setIsSavingKeys] = useState(false);
       const [usageLogs, setUsageLogs] = useState([]);
+      const [totalUserCount, setTotalUserCount] = useState(null);
       const [systemGroqKeys, setSystemGroqKeys] = useState([]);
       const [systemGroqKeysInput, setSystemGroqKeysInput] = useState('');
       const [currentGroqKeyIndex, setCurrentGroqKeyIndex] = useState(0);
@@ -169,11 +183,15 @@
         const unsubAuth = auth.onAuthStateChanged(user => {
           if (user) {
             setFirebaseUser(user);
-            db.collection("users").doc(user.uid).get().then(doc => {
+            const userRef = db.collection("users").doc(user.uid);
+            userRef.get().then(doc => {
               if (doc.exists) {
                 const data = doc.data();
                 if (data.groqKey) setUserGroqKey(data.groqKey);
                 if (data.geminiKey) setUserGeminiKey(data.geminiKey);
+                userRef.set({ lastSeen: new Date().toISOString() }, { merge: true }).catch(() => {});
+              } else {
+                userRef.set({ firstSeen: new Date().toISOString(), lastSeen: new Date().toISOString() }).catch(() => {});
               }
             }).catch(() => {});
           }
@@ -197,6 +215,15 @@
           const list = [];
           snapshot.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
           setUsageLogs(list);
+        }, () => {});
+        return () => unsub();
+      }, [isAdminAuthenticated]);
+
+      // Admin-only: total number of distinct people who have ever opened the app
+      useEffect(() => {
+        if (!db || !isAdminAuthenticated) return;
+        const unsub = db.collection("users").onSnapshot(snapshot => {
+          setTotalUserCount(snapshot.size);
         }, () => {});
         return () => unsub();
       }, [isAdminAuthenticated]);
@@ -403,16 +430,17 @@
 
         try {
           await runWithProgress(progressSetter, async () => {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            const res = await fetch('/api/translate', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt, apiKey: activeKey })
             });
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              const detail = errData?.error?.message || `HTTP ${res.status}`;
+              const detail = errData?.error || `HTTP ${res.status}`;
               throw new Error(detail);
             }
             const data = await res.json();
-            const result = data.candidates?.[0]?.content?.parts?.[0]?.text || "Translation Error.";
+            const result = data.text || "Translation Error.";
             type === 'srt' ? setTranslatedSrtText(result) : setTranslatedText(result);
             showToast("အောင်မြင်စွာ ပြန်ဆိုပြီးပါပြီ။", "success");
             logUsage('translate_' + type, usedSystemKey);
@@ -673,14 +701,14 @@
                 <div className="space-y-6">
                   <div className="bg-black/30 p-5 rounded-2xl border border-purple-500/20 space-y-4 shadow-inner">
                     <div>
-                      <label className="text-xs text-purple-300 font-bold block mb-2">အသံ ရွေးချယ်ရန် (၁၀ မျိုး)</label>
+                      <label className="text-xs text-purple-300 font-bold block mb-2">အသံ ရွေးချယ်ရန် (၂၄ မျိုး)</label>
                       <div className="relative">
                         <i className="fa-solid fa-microphone-lines absolute left-3 top-1/2 -translate-y-1/2 text-purple-400"></i>
                         <select value={selectedPreset} onChange={(e) => { setSelectedPreset(e.target.value); setPreviewUrl(null); }} className="w-full bg-black/40 pl-10 pr-3 py-3 rounded-xl text-white outline-none border border-purple-500/30 focus:border-amber-500/50 transition-colors">
                           {VOICE_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
                         </select>
                       </div>
-                      <p className="text-[10px] text-purple-400 mt-2">နီလာ/သီဟ အသံအစစ် ၂ မျိုးကို style ၅ မျိုးစီနှင့် ပေါင်းစပ်ထား — စုစုပေါင်း ၁၀ မျိုး။ Slider ဖြင့် ထပ်၍ ချိန်ညှိနိုင်ပါသည်။</p>
+                      <p className="text-[10px] text-purple-400 mt-2">နီလာ/သီဟ အသံအစစ် ၂ မျိုးကို style ၅ မျိုးစီနှင့် ပေါင်း ၁၀ မျိုး + နောက်ထပ် voice ၁၄ မျိုး = စုစုပေါင်း ၂၄ မျိုး။</p>
 
                       <button onClick={previewVoice} disabled={isPreviewing} className="mt-3 w-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 border border-purple-500/30 py-2.5 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-2">
                         {isPreviewing ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-headphones"></i>}
@@ -733,6 +761,17 @@
               {/* ADMIN TAB */}
               {activeTab === 'admin' && isAdminAuthenticated && (
                 <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-black/30 border border-purple-500/20 rounded-2xl p-4 text-center">
+                      <p className="text-2xl font-bold gold-text">{totalUserCount === null ? '…' : totalUserCount}</p>
+                      <p className="text-[10px] text-purple-300 mt-1">စုစုပေါင်း App ဖွင့်ဖူးသူ</p>
+                    </div>
+                    <div className="bg-black/30 border border-purple-500/20 rounded-2xl p-4 text-center">
+                      <p className="text-2xl font-bold text-emerald-400">{new Set(usageLogs.map(l => l.uid)).size}</p>
+                      <p className="text-[10px] text-purple-300 mt-1">လတ်တလော အသုံးပြုနေသူ (မှတ်တမ်း ၅၀ အတွင်း)</p>
+                    </div>
+                  </div>
+
                   <div className="bg-black/30 border border-amber-500/30 p-6 rounded-3xl shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 joker-btn"></div>
                     <h3 className="gold-text font-bold text-base mb-5 flex items-center gap-2">
