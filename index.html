@@ -453,11 +453,9 @@
 
       const PREVIEW_TEXT = "မင်္ဂလာပါ၊ ဒါက အသံနမူနာ ဖြစ်ပါတယ်။";
 
-      // The backend accepts the two Myanmar voices (v1/v2) by their full Azure
-      // name directly, but only recognizes the other 14 voices by their short
-      // VOICE_MAP code (v3-v14). Sending the wrong form for either causes
-      // "Invalid voice selection".
-      const getPayloadVoice = (preset) => (preset.code === 'v1' || preset.code === 'v2') ? preset.voice : preset.code;
+      // Backend's updated VOICE_MAP resolves the short code (v1-v14) to the
+      // real Edge-TTS voice name, so we just send the code for every preset.
+      const getPayloadVoice = (preset) => preset.code;
 
       const previewVoice = async () => {
         const preset = VOICE_PRESETS.find(v => v.id === selectedPreset) || VOICE_PRESETS[0];
